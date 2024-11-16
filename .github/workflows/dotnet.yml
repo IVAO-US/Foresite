@@ -16,6 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        ssh-key: ${{ secrets.DEPLOY_KEY }}
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -26,10 +28,10 @@ jobs:
       run: dotnet publish Foresite/Foresite.csproj -o publish
     - name: Deploy
       run: |
-        cd publish
-        git init
-        git remote set origin https://github.com/IVAO-US/Foresite.git
         git switch -c deploy
-        git add *
-        git commit -m "Deploy"
-        git push --force
+        rm -rf Foresite Foresite.sln
+        mv publish/* .
+        rm -rf publish
+        git config user.name "Github Workflow"; git config user.email "us-wm+github@ivao.aero"
+        git add -f *; git commit -m "Automated deployment $(date +'%Y-%m-%d %H:%M:%S')"
+        git push --force --set-upstream origin deploy
