@@ -29,10 +29,4 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.Use(async (context, next) =>
-{
-    context.Response.Headers.Append("Cache-Control", "no-cache");
-    await next();
-});
-
 app.Run();
