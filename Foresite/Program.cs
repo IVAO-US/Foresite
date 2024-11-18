@@ -1,4 +1,5 @@
 using Foresite.Components;
+using Foresite.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<WhazzupService>();
 
 var app = builder.Build();
 
