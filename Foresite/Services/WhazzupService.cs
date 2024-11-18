@@ -114,9 +114,8 @@ public class Flightplan
     public int revision { get; set; }
     public string aircraftId { get; set; }
     public int aircraftNumber { get; set; }
-    public string departureId { get; set; }
-
-    public string arrivalId { get; set; }
+    public string? departureId { get; set; }
+    public string? arrivalId { get; set; }
     public string alternativeId { get; set; }
     public string alternative2Id { get; set; }
     public string route { get; set; }

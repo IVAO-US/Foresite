@@ -2,6 +2,7 @@
 @using System.Text.RegularExpressions
 @using Foresite.Services
 @inject WhazzupService whazzup
+@inject NavigationManager nav
 
 <PageTitle>Foresite Home</PageTitle>
 
@@ -15,15 +16,15 @@
 		<th>CallSign</th>
 	</tr>
 
-		@foreach (Pilot pilot in whazzup.Data?.clients.pilots ?? [])
-		{
+	@foreach (Pilot pilot in whazzup.Data?.clients.pilots ?? [])
+	{
 		<tr>
-			<td>@pilot.userId</td>
+			<td onmousedown="@(() => nav.NavigateTo($"https://ivao.aero/Member.aspx?ID={pilot.userId}"))">@pilot.userId</td>
 			<td>@pilot.flightPlan?.departureId</td>
 			<td>@pilot.flightPlan?.arrivalId</td>
 			<td>@pilot.callsign</td>
 		</tr>
-		}
+	}
 </table>
 @code
 {
