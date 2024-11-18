@@ -5,6 +5,10 @@ VisualStudioVersion = 17.12.35506.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foresite", "Foresite\Foresite.csproj", "{785A35FD-F32E-4741-9471-430A6AAC0543}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CIFPReader", "CIFPReader\CIFPReader.csproj", "{7F4AED09-26F8-4AAF-8AB8-1DB82B39C96C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShapefileReader", "ShapefileReader\ShapefileReader.csproj", "{8B328BE6-487A-405F-BC9F-E907777235EA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{785A35FD-F32E-4741-9471-430A6AAC0543}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{785A35FD-F32E-4741-9471-430A6AAC0543}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{785A35FD-F32E-4741-9471-430A6AAC0543}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F4AED09-26F8-4AAF-8AB8-1DB82B39C96C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F4AED09-26F8-4AAF-8AB8-1DB82B39C96C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F4AED09-26F8-4AAF-8AB8-1DB82B39C96C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F4AED09-26F8-4AAF-8AB8-1DB82B39C96C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B328BE6-487A-405F-BC9F-E907777235EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B328BE6-487A-405F-BC9F-E907777235EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B328BE6-487A-405F-BC9F-E907777235EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B328BE6-487A-405F-BC9F-E907777235EA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

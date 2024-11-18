@@ -1,4 +1,5 @@
 using Foresite.Components;
+using Foresite.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,7 +9,10 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddSingleton<CifpService>();
+
 var app = builder.Build();
+_ = app.Services.GetRequiredService<CifpService>().Cifp;
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

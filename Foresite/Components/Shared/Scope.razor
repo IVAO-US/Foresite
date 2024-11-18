@@ -1,0 +1,89 @@
+﻿@using Blazor.Extensions
+@using Blazor.Extensions.Canvas
+@using Blazor.Extensions.Canvas.Canvas2D
+@using CIFPReader
+@using System.Collections.Immutable
+@inject IJSRuntime js
+@inject CifpService cifp
+@page "/scope"
+
+<div>
+	<canvas height="@_canvasHeight" width="@_canvasWidth" id="displayCanvas" />
+	<canvas height="@BUFFER_HEIGHT" width="@BUFFER_WIDTH" id="pointCanvas" class="buffer" />
+	<canvas height="@BUFFER_HEIGHT" width="@BUFFER_WIDTH" id="lineCanvas" class="buffer" />
+	<canvas height="@BUFFER_HEIGHT" width="@BUFFER_WIDTH" id="coastCanvas" class="buffer" />
+</div>
+
+<HeadContent>
+	<style>
+		body {
+		overflow: hidden;
+		background-color: black;
+		}
+	</style>
+</HeadContent>
+
+@code {
+	private int _canvasHeight = 400;
+	private int _canvasWidth = 600;
+	private const int BUFFER_HEIGHT = 10000;
+	private const int BUFFER_WIDTH = 10000;
+
+	private Task? _drawMonitor;
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		int newWidth = await js.InvokeAsync<int>("getWidth", []),
+			newHeight = await js.InvokeAsync<int>("getHeight", []);
+
+		if (_canvasWidth != newWidth || _canvasHeight != newHeight)
+		{
+			(_canvasWidth, _canvasHeight) = (newWidth, newHeight);
+			await InvokeAsync(StateHasChanged);
+		}
+
+		await js.InvokeVoidAsync("initCanvas", [BUFFER_WIDTH, BUFFER_HEIGHT]);
+		await js.InvokeVoidAsync("drawCoastline", [cifp.Coastlines.Where(line => line.Any(p => p.Latitude is > 20 and < 50 && p.Longitude < -30)).Select(line => line.Select(WorldToScreen).Select(p => (double[])[p.x, p.y]).ToArray()).ToArray()]);
+		
+		_drawMonitor ??= Task.Run(async () =>
+		{
+			while (true)
+			{
+				await DrawAsync();
+				await Task.Delay(100);
+			}
+		});
+	}
+
+	protected async Task DrawAsync()
+	{
+		double scale = BUFFER_HEIGHT * await js.InvokeAsync<double>("getScale", []);
+		int pointSize = Math.Max((int)(scale / 1000), 1);
+		await js.InvokeVoidAsync("drawPoints", [cifp.Cifp.Aerodromes.Values.Select(ap => ap.Location.GetCoordinate()).Select(WorldToScreen).Select(p => (double[])([p.x, p.y, pointSize])).ToArray()]);
+	}
+
+	private const double DEG_TO_RAD = Math.PI / 180;
+	private const double PI_OVER_FOUR = Math.PI / 4;
+	private (double x, double y) WorldToScreen(Coordinate c)
+	{
+		double radius = BUFFER_HEIGHT / Math.Tau;
+		double lat = DEG_TO_RAD * Math.Clamp((double)c.Latitude, -89, 89);
+		double lon = DEG_TO_RAD * (double)c.Longitude;
+		double intermediateY = Math.Log(Math.Tan(PI_OVER_FOUR + lat / 2));
+
+		return (
+			x: lon * radius + BUFFER_WIDTH / 2,
+			y: BUFFER_HEIGHT / 2 - (intermediateY * radius)
+		);
+	}
+
+	private Coordinate ScreenToWorld(double x, double y)
+	{
+		double radius = BUFFER_HEIGHT / Math.Tau;
+		double intermediateY = (BUFFER_HEIGHT / 2 - y) / radius;
+		double lat = Math.Atan(Math.Exp(intermediateY)) * 2 - PI_OVER_FOUR;
+		double lon = (x - BUFFER_WIDTH / 2) / radius;
+
+		return new Coordinate((decimal)lat, (decimal)lon);
+	}
+}
