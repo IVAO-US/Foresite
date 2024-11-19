@@ -10,7 +10,7 @@ public sealed class CifpService
 {
 	public CIFP Cifp { get; private set; } = CIFP.Load();
 	public ImmutableHashSet<ImmutableArray<Coordinate>> Coastlines { get; private set; } = [..
-		Reader.ReadShapefile(@"C:\Users\westo\OneDrive\Flying\IVAO\XA\Web\Foresite\Foresite\coastline\coastline_i.shp")
+		Reader.ReadShapefile(Path.Combine(Path.GetDirectoryName(Environment.ProcessPath) ?? Environment.CurrentDirectory, "coastline", "coastline_i.shp"))
 		.Select(ring => ring.Select(pt => new Coordinate((decimal)pt.y, (decimal)pt.x)).ToImmutableArray())
 	];
 
