@@ -3,27 +3,29 @@ window.getHeight = () => window.innerHeight;
 window.getScale = () => scale;
 
 const tau = 2 * Math.PI;
-let scale = 1, isMouseDown = false, leftEdge = 0, topEdge = 0, bufferWidth = 1000, bufferHeight = 1000;
+let scale = 4, isMouseDown = false, leftEdge = 0, topEdge = 0, bufferWidth = 1000, bufferHeight = 1000, lastClientX = 0, lastClientY = 0;
 window.initCanvas = (bufWidth, bufHeight) => {
 	const display = document.querySelector("#displayCanvas");
 	display.addEventListener('wheel', we => {
 		const oldScale = scale;
 		scale += we.deltaY / 100; scale = Math.max(Math.min(scale, 5), 0.005);
-		leftEdge -= window.innerWidth / 2 * (scale - oldScale);
-		topEdge -= window.innerHeight / 2 * (scale - oldScale);
+		leftEdge -= window.innerWidth * (lastClientX / window.innerWidth) * (scale - oldScale);
+		topEdge -= window.innerHeight * (lastClientY / window.innerHeight) * (scale - oldScale);
 	}, { passive: true });
 	display.addEventListener('mousedown', _ => { isMouseDown = true; }, { passive: true });
 	display.addEventListener('mouseup', _ => { isMouseDown = false; }, { passive: true });
 	display.addEventListener('mousemove', me => {
+		lastClientX = me.clientX; lastClientY = me.clientY;
 		if (isMouseDown === false) return;
 		leftEdge -= me.movementX * scale * 0.8;
 		topEdge -= me.movementY * scale * 0.8;
+		console.log(`(${leftEdge}, ${topEdge})`);
 	}, { passive: true });
 
 	bufferWidth = bufWidth;
 	bufferHeight = bufHeight;
-	leftEdge = 0;
-	topEdge = 0;
+	leftEdge = bufferWidth * 0.2;
+	topEdge = bufferHeight * 0.65;
 	requestAnimationFrame(window.draw);
 }
 window.draw = () => {
@@ -37,17 +39,15 @@ window.draw = () => {
 	ctx.drawImage(coast, leftEdge, topEdge, window.innerWidth * scale, window.innerHeight * scale, 0, 0, window.innerWidth, window.innerHeight);
 	ctx.drawImage(line, leftEdge, topEdge, window.innerWidth * scale, window.innerHeight * scale, 0, 0, window.innerWidth, window.innerHeight);
 	ctx.drawImage(point, leftEdge, topEdge, window.innerWidth * scale, window.innerHeight * scale, 0, 0, window.innerWidth, window.innerHeight);
-	ctx.fillStyle = "white";
-	ctx.fillRect(window.innerWidth / 2 - 25, window.innerHeight / 2 - 25, 50, 50);
 
 	requestAnimationFrame(window.draw);
-	console.log(`(${leftEdge}, ${topEdge})`);
 }
 window.drawCoastline = (lines) => {
 	const ctx = document.querySelector("#coastCanvas").getContext('2d');
 	ctx.clearRect(0, 0, bufferWidth, bufferHeight);
 
 	ctx.strokeStyle = "white";
+	let minLat = bufferHeight, minLon = bufferWidth;
 	ctx.beginPath();
 
 	for (const line of lines) {
@@ -55,11 +55,14 @@ window.drawCoastline = (lines) => {
 
 		ctx.moveTo(line[0][0], line[0][1]);
 		for (const point of line.slice(1)) {
+			if (point[0] < minLon) minLon = point[0];
+			if (point[1] < minLat) minLat = point[1];
 			ctx.lineTo(point[0], point[1]);
 		}
 	}
 
 	ctx.stroke();
+	console.log(`COAST DRAWN: Min ${minLon}, ${minLat}`);
 }
 window.drawLines = (lines) => {
 	const ctx = document.querySelector("#lineCanvas").getContext('2d');

@@ -10,10 +10,11 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<WhazzupService>();
-
 builder.Services.AddSingleton<CifpService>();
 
 var app = builder.Build();
+
+// Force load of CIFPs.
 _ = app.Services.GetRequiredService<CifpService>().Cifp;
 
 // Configure the HTTP request pipeline.
@@ -25,8 +26,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-app.UseStaticFiles();
+app.MapStaticAssets();
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()

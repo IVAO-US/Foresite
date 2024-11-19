@@ -1,6 +1,7 @@
 ﻿namespace Foresite.Services;
 
 using CIFPReader;
+
 using ShapefileReader;
 
 using System.Collections.Immutable;
@@ -13,5 +14,21 @@ public sealed class CifpService
 		.Select(ring => ring.Select(pt => new Coordinate((decimal)pt.y, (decimal)pt.x)).ToImmutableArray())
 	];
 
-	public CifpService() { Task.Run(async () => { while (true) { await Task.Delay(TimeSpan.FromDays(7)); Cifp = CIFP.Load(); } }); }
+	public CifpService()
+	{
+		Task.Run(async () =>
+		{
+			while (true)
+			{
+				await Task.Delay(TimeSpan.FromDays(7));
+
+				// Destroy cache.
+				if (Directory.Exists("cifp"))
+					Directory.Delete("cifp");
+
+				// Download anew!
+				Cifp = CIFP.Load();
+			}
+		});
+	}
 }

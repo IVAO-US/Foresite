@@ -26,8 +26,8 @@
 @code {
 	private int _canvasHeight = 400;
 	private int _canvasWidth = 600;
-	private const int BUFFER_HEIGHT = 10000;
-	private const int BUFFER_WIDTH = 10000;
+	private const int BUFFER_HEIGHT = 15000;
+	private const int BUFFER_WIDTH = 15000;
 
 	private Task? _drawMonitor;
 
@@ -42,8 +42,11 @@
 			await InvokeAsync(StateHasChanged);
 		}
 
+		System.Diagnostics.Debug.WriteLine("Beginning coast processing");
+		var coastlines = cifp.Coastlines.Where(line => line.Any(p => p.Latitude is > 20 and < 50 && p.Longitude < -30)).ToArray();
 		await js.InvokeVoidAsync("initCanvas", [BUFFER_WIDTH, BUFFER_HEIGHT]);
-		await js.InvokeVoidAsync("drawCoastline", [cifp.Coastlines.Where(line => line.Any(p => p.Latitude is > 20 and < 50 && p.Longitude < -30)).Select(line => line.Select(WorldToScreen).Select(p => (double[])[p.x, p.y]).ToArray()).ToArray()]);
+		await js.InvokeVoidAsync("drawCoastline", [coastlines.Select(line => line.Select(WorldToScreen).Select(p => (double[])[p.x, p.y]).ToArray()).ToArray()]);
+		System.Diagnostics.Debug.WriteLine("Finished coast processing");
 		
 		_drawMonitor ??= Task.Run(async () =>
 		{
@@ -66,23 +69,23 @@
 	private const double PI_OVER_FOUR = Math.PI / 4;
 	private (double x, double y) WorldToScreen(Coordinate c)
 	{
-		double radius = BUFFER_HEIGHT / Math.Tau;
+		double radius = BUFFER_HEIGHT * 2 / Math.Tau;
 		double lat = DEG_TO_RAD * Math.Clamp((double)c.Latitude, -89, 89);
 		double lon = DEG_TO_RAD * (double)c.Longitude;
 		double intermediateY = Math.Log(Math.Tan(PI_OVER_FOUR + lat / 2));
 
 		return (
-			x: lon * radius + BUFFER_WIDTH / 2,
-			y: BUFFER_HEIGHT / 2 - (intermediateY * radius)
+			x: lon * radius + BUFFER_WIDTH,
+			y: BUFFER_HEIGHT - (intermediateY * radius)
 		);
 	}
 
 	private Coordinate ScreenToWorld(double x, double y)
 	{
-		double radius = BUFFER_HEIGHT / Math.Tau;
-		double intermediateY = (BUFFER_HEIGHT / 2 - y) / radius;
+		double radius = BUFFER_HEIGHT * 2 / Math.Tau;
+		double intermediateY = (BUFFER_HEIGHT - y) / radius;
 		double lat = Math.Atan(Math.Exp(intermediateY)) * 2 - PI_OVER_FOUR;
-		double lon = (x - BUFFER_WIDTH / 2) / radius;
+		double lon = (x - BUFFER_WIDTH) / radius;
 
 		return new Coordinate((decimal)lat, (decimal)lon);
 	}
