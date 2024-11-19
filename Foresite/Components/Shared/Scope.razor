@@ -1,0 +1,241 @@
+﻿@using Blazor.Extensions
+@using Blazor.Extensions.Canvas
+@using Blazor.Extensions.Canvas.Canvas2D
+@using CIFPReader
+@using System.Collections.Immutable
+@inject IJSRuntime js
+@inject CifpService cifp
+@inject WhazzupService whazzup
+
+<div @onmousemove="MouseMoveAsync">
+	<BECanvas Height="@_canvasHeight" Width="@_canvasWidth" @ref="_dynamicCanvas" />
+	<BECanvas Height="@_canvasHeight" Width="@_canvasWidth" @ref="_staticCanvas" />
+</div>
+
+<HeadContent>
+	<style>
+		body {
+		overflow: hidden;
+		background-color: black;
+		}
+	</style>
+</HeadContent>
+
+@code {
+	private BECanvasComponent? _staticCanvas, _dynamicCanvas;
+	private int _canvasHeight = 400;
+	private int _canvasWidth = 600;
+
+	const float ALASKA_SCALE = 0.65f, ALASKA_STRETCH = 1.5f, HAWAII_SCALE = 3.0f;
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		int newWidth = await js.InvokeAsync<int>("getWidth", []),
+			newHeight = await js.InvokeAsync<int>("getHeight", []);
+
+		if (_canvasWidth != newWidth || _canvasHeight != newHeight)
+		{
+			(_canvasWidth, _canvasHeight) = (newWidth, newHeight);
+			await InvokeAsync(StateHasChanged);
+		}
+
+		_alaskaTopLeft = WorldToScreen(new(73, -175));
+		_alaskaBottomRight = WorldToScreen(new(52, -130));
+		_alaskaSize = ((_alaskaBottomRight.x - _alaskaTopLeft.x) * ALASKA_SCALE, (_alaskaBottomRight.y - _alaskaTopLeft.y) * ALASKA_SCALE * ALASKA_STRETCH);
+
+		_hawaiiTopLeft = WorldToScreen(new(23, -161));
+		_hawaiiBottomRight = WorldToScreen(new(18, -154));
+		_hawaiiSize = ((_hawaiiBottomRight.x - _hawaiiTopLeft.x) * HAWAII_SCALE, (_hawaiiBottomRight.y - _hawaiiTopLeft.y) * HAWAII_SCALE);
+
+		if (_staticCanvas is null || _setup)
+			return;
+
+		_setup = true;
+		var coastlines = cifp.Coastlines.Where(line => line.Any(p => p.Latitude > 20 && p.Longitude < -30)).Select(l => l.Select(WorldToScreen).ToArray()).ToArray();
+		var ctx = await _staticCanvas.CreateCanvas2DAsync();
+		await ctx.BeginBatchAsync();
+		await ctx.SetStrokeStyleAsync("white");
+		await ctx.BeginPathAsync();
+
+		foreach (var coastline in coastlines)
+		{
+			if (coastline.Length < 3) continue;
+			bool lastSkipped = true;
+
+			foreach (var point in coastline)
+			{
+				if (lastSkipped)
+				{
+					lastSkipped = false;
+
+					if (EnforceBoxes(point) is (double x, double y))
+						await ctx.MoveToAsync(x, y);
+					else
+						lastSkipped = true;
+				}
+				else
+				{
+					lastSkipped = false;
+
+					if (EnforceBoxes(point) is (double x, double y))
+						await ctx.LineToAsync(x, y);
+					else
+						lastSkipped = true;
+				}
+			}
+		}
+
+		await ctx.MoveToAsync(0, 0); await ctx.LineToAsync(_alaskaSize.x, 0); await ctx.LineToAsync(_alaskaSize.x, _alaskaSize.y); await ctx.LineToAsync(0, _alaskaSize.y); await ctx.LineToAsync(0, 0);
+		await ctx.MoveToAsync(0, _canvasHeight); await ctx.LineToAsync(0, _canvasHeight - _hawaiiSize.y); await ctx.LineToAsync(_hawaiiSize.x, _canvasHeight - _hawaiiSize.y); await ctx.LineToAsync(_hawaiiSize.x, _canvasHeight); await ctx.LineToAsync(0, _canvasHeight);
+
+		await ctx.StrokeAsync();
+		await ctx.EndBatchAsync();
+
+		var dynamicCtx = await _dynamicCanvas.CreateCanvas2DAsync();
+		whazzup.DataUpdated += async _ => await DrawAsync(dynamicCtx);
+	}
+
+	private SemaphoreSlim _drawingLock = new(1);
+	protected async Task DrawAsync(Canvas2DContext ctx)
+	{
+		if (_drawingLock.CurrentCount == 0)
+			return;
+
+		await _drawingLock.WaitAsync();
+		try
+		{
+			await ctx.BeginBatchAsync();
+			await ctx.ClearRectAsync(0, 0, _canvasWidth, _canvasHeight);
+
+			await ctx.SetFillStyleAsync("white");
+			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => p.lastTrack is not null && p.flightPlan is Flightplan fpl && fpl.IsUsDeparture() && fpl.IsUsArrival()) ?? [])
+			{
+				if (EnforceBoxes(WorldToScreen(new(pilot.lastTrack!.latitude, pilot.lastTrack.longitude))) is not (double x, double y))
+					continue;
+
+				await ctx.BeginPathAsync(); ;
+				await ctx.ArcAsync(x, y, 5, 0, Math.Tau);
+				await ctx.FillAsync();
+			}
+
+			await ctx.SetFillStyleAsync("blue");
+			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => p.lastTrack is not null && p.flightPlan is Flightplan fpl && fpl.IsUsDeparture() && !fpl.IsUsArrival()) ?? [])
+			{
+				if (EnforceBoxes(WorldToScreen(new(pilot.lastTrack!.latitude, pilot.lastTrack.longitude))) is not (double x, double y))
+					continue;
+
+				await ctx.BeginPathAsync();
+				await ctx.ArcAsync(x, y, 5, 0, Math.Tau);
+				await ctx.FillAsync();
+			}
+
+			await ctx.SetFillStyleAsync("green");
+			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => p.lastTrack is not null && p.flightPlan is Flightplan fpl && !fpl.IsUsDeparture()) ?? [])
+			{
+				if (EnforceBoxes(WorldToScreen(new(pilot.lastTrack!.latitude, pilot.lastTrack.longitude))) is not (double x, double y))
+					continue;
+
+				await ctx.BeginPathAsync();
+				await ctx.ArcAsync(x, y, 5, 0, Math.Tau);
+				await ctx.FillAsync();
+			}
+
+			await ctx.SetFillStyleAsync("red");
+			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => 
+				p.lastTrack is Lasttrack lt && 
+				EnforceBoxes(WorldToScreen(new(lt.latitude, lt.longitude))) is (double x, double y) &&
+				Math.Abs(Math.Pow(_lastMousePosition.x - x, 2) + Math.Pow(_lastMousePosition.y - y, 2)) < 25
+			) ?? [])
+			{
+				if (EnforceBoxes(WorldToScreen(new(pilot.lastTrack!.latitude, pilot.lastTrack.longitude))) is not (double x, double y))
+					continue;
+
+				await ctx.BeginPathAsync();
+				await ctx.ArcAsync(x, y, 10, 0, Math.Tau);
+				await ctx.FillAsync();
+			}
+
+			await ctx.EndBatchAsync();
+		}
+		catch (Microsoft.JSInterop.JSDisconnectedException) { } // Client disconnected.
+		finally {
+			_drawingLock.Release();
+		}
+	}
+
+	(double x, double y) _lastMousePosition = (0, 0);
+	Coordinate _lastMouseCoord = new();
+	protected async Task MouseMoveAsync(MouseEventArgs me)
+	{
+		_lastMousePosition = (me.ClientX, me.ClientY);
+		_lastMouseCoord = ScreenToWorld(me.ClientX, me.ClientY);
+		await DrawAsync(await _dynamicCanvas.CreateCanvas2DAsync());
+	}
+
+	(double x, double y) _alaskaTopLeft = (0, 0), _alaskaBottomRight = (0, 0);
+	(double x, double y) _alaskaSize = (0, 0);
+	(double x, double y) _hawaiiTopLeft = (0, 0), _hawaiiBottomRight = (0, 0);
+	(double x, double y) _hawaiiSize = (0, 0);
+
+	bool InAlaska((double x, double y) point) =>
+		point.x < _alaskaBottomRight.x && point.y < _alaskaBottomRight.y &&
+		point.x > _alaskaTopLeft.x && point.y > _alaskaTopLeft.y;
+
+	bool InHawaii((double x, double y) point) =>
+		point.x < _hawaiiBottomRight.x && point.y < _hawaiiBottomRight.y &&
+		point.x > _hawaiiTopLeft.x && point.y > _hawaiiTopLeft.y;
+
+	bool InProtectedArea((double x, double y) point) =>
+		(point.x < _alaskaSize.x && point.y < _alaskaSize.y) ||
+		(point.x < _hawaiiSize.x && point.y > _canvasHeight - _hawaiiSize.y);
+
+	(double x, double y)? EnforceBoxes((double x, double y) point) =>
+		InAlaska(point) ? ((point.x - _alaskaTopLeft.x) * ALASKA_SCALE, (point.y - _alaskaTopLeft.y) * ALASKA_SCALE * ALASKA_STRETCH)
+		: InHawaii(point) ? ((point.x - _hawaiiTopLeft.x) * HAWAII_SCALE, (point.y - _hawaiiTopLeft.y) * HAWAII_SCALE + (_canvasHeight - _hawaiiSize.y))
+		: InProtectedArea(point) ? ((double x, double y)?)null
+		: point;
+
+	private bool _setup = false;
+	private Coordinate _centerpoint = new(43, -110);
+	private const double DEG_TO_RAD = Math.PI / 180;
+	private const double PI_OVER_FOUR = Math.PI / 4;
+	private (double x, double y) WorldToScreen(Coordinate c)
+	{
+		c -= _centerpoint;
+		double radius = _canvasWidth * 4 / Math.Tau;
+		double lat = DEG_TO_RAD * Math.Clamp((double)c.Latitude, -89, 89);
+		double lon = DEG_TO_RAD * (double)c.Longitude;
+		double intermediateY = Math.Log(Math.Tan(PI_OVER_FOUR + lat / 2));
+
+		return (
+			x: lon * radius + _canvasWidth / 2,
+			y: _canvasHeight / 2 - (intermediateY * radius)
+		);
+	}
+
+	private Coordinate ScreenToWorld(double x, double y)
+	{
+		if (InProtectedArea((x, y)))
+		{
+			if (y > _alaskaSize.y)
+			{
+				// Hawaii.
+				x = x / HAWAII_SCALE + _hawaiiTopLeft.x;
+				y = (y - (_canvasHeight - _hawaiiSize.y)) / HAWAII_SCALE + _hawaiiTopLeft.y; 
+			}
+			else
+			{
+				// Alaska
+				x = x / ALASKA_SCALE + _alaskaTopLeft.x;
+				y = y / ALASKA_SCALE / ALASKA_STRETCH + _alaskaTopLeft.y;
+			}
+		}
+
+		double radius = _canvasWidth * 4 / Math.Tau;
+		double intermediateY = ((_canvasHeight / 2) - y) / radius;
+		double lat = (Math.Atan(Math.Exp(intermediateY)) - PI_OVER_FOUR) * 2;
+		double lon = (x - _canvasWidth / 2) / radius;
+
+		return new Coordinate((decimal)(lat / DEG_TO_RAD), (decimal)(lon / DEG_TO_RAD)) + _centerpoint;
+	}
+}
