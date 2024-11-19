@@ -1,4 +1,4 @@
-﻿div, canvas {
+﻿div, ::deep canvas {
     margin: 0;
     padding: 0;
     overflow: hidden;
@@ -7,7 +7,7 @@
     left: 0;
     bottom: 0;
     right: 0;
-    z-index: -1;
+    background-color: transparent;
 }
 
 div {
@@ -15,6 +15,10 @@ div {
     height: 100%;
 }
 
-canvas.buffer {
-    display: none;
-}
+    div ::deep canvas:first-child {
+        z-index: -1;
+    }
+
+    div ::deep canvas:nth-child(2) {
+        z-index: -2;
+    }

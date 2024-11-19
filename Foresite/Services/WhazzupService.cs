@@ -29,12 +29,19 @@ public class WhazzupService
     async Task<WhazzupDigest?> GetAsync()
     {
         if (await _http.GetFromJsonAsync<WhazzupDigest>(WHAZZUP_URL) is not WhazzupDigest w)
-            return null;
+            // Failed. Keep the old data until you get something usable.
+            return _data;
 
-        w.clients.pilots = [.. w.clients.pilots.Where(p => (p.flightPlan?.departureId?.StartsWith('K') ?? false) || (p.flightPlan?.arrivalId?.StartsWith('K') ?? false))];
+        w.clients.pilots = [.. w.clients.pilots.Where(p => p.flightPlan is Flightplan fpl && (fpl.IsUsDeparture() || fpl.IsUsArrival()))];
         return w;
     }
 
+}
+
+public static class WhazzupExtensions
+{
+    public static bool IsUsDeparture(this Flightplan fpl) => fpl.departureId is string d && (d.StartsWith('K') || d.StartsWith("PH") || d.StartsWith("PA") || d.StartsWith("TJ"));
+    public static bool IsUsArrival(this Flightplan fpl) => fpl.arrivalId is string a && (a.StartsWith('K') || a.StartsWith("PH") || a.StartsWith("PA") || a.StartsWith("TJ"));
 }
 
 
@@ -80,7 +87,7 @@ public class Pilot
     public DateTime createdAt { get; set; }
     public int time { get; set; }
     public Pilotsession pilotSession { get; set; }
-    public Lasttrack lastTrack { get; set; }
+    public Lasttrack? lastTrack { get; set; }
     public Flightplan? flightPlan { get; set; }
 }
 
@@ -98,8 +105,8 @@ public class Lasttrack
     public float? departureDistance { get; set; }
     public int groundSpeed { get; set; }
     public int heading { get; set; }
-    public float latitude { get; set; }
-    public float longitude { get; set; }
+    public decimal latitude { get; set; }
+    public decimal longitude { get; set; }
     public bool onGround { get; set; }
     public string state { get; set; }
     public DateTime timestamp { get; set; }
