@@ -118,7 +118,7 @@
 				await ctx.FillAsync();
 			}
 
-			await ctx.SetFillStyleAsync("blue");
+			await ctx.SetFillStyleAsync("green");
 			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => p.lastTrack is not null && p.flightPlan is Flightplan fpl && fpl.IsUsDeparture() && !fpl.IsUsArrival()) ?? [])
 			{
 				if (EnforceBoxes(WorldToScreen(new(pilot.lastTrack!.latitude, pilot.lastTrack.longitude))) is not (double x, double y))
@@ -129,7 +129,7 @@
 				await ctx.FillAsync();
 			}
 
-			await ctx.SetFillStyleAsync("green");
+			await ctx.SetFillStyleAsync("blue");
 			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => p.lastTrack is not null && p.flightPlan is Flightplan fpl && !fpl.IsUsDeparture()) ?? [])
 			{
 				if (EnforceBoxes(WorldToScreen(new(pilot.lastTrack!.latitude, pilot.lastTrack.longitude))) is not (double x, double y))

@@ -1,9 +1,39 @@
 using Foresite.Components;
 using Foresite.Services;
 
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+
+const string OIDC_SCHEME = "ivao";
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddAuthentication(OIDC_SCHEME)
+	.AddOpenIdConnect(OIDC_SCHEME, oidcOptions =>
+	{
+		oidcOptions.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+		oidcOptions.Scope.Add(OpenIdConnectScope.OpenIdProfile);
+		oidcOptions.Authority = "https://api.ivao.aero/";
+		oidcOptions.ClientId = "0202bfa6-1a63-47a7-a0fd-91a6395c756a";
+		oidcOptions.ResponseType = OpenIdConnectResponseType.Code;
+		oidcOptions.MapInboundClaims = false;
+		oidcOptions.TokenValidationParameters.NameClaimType = "nickname";
+		oidcOptions.TokenValidationParameters.RoleClaimType = "roles";
+	})
+	.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
+
+// ConfigureCookieOidcRefresh attaches a cookie OnValidatePrincipal callback to get
+// a new access token when the current one expires, and reissue a cookie with the
+// new access token saved inside. If the refresh fails, the user will be signed
+// out. OIDC connect options are set for saving tokens and the offline access
+// scope.
+builder.Services.ConfigureCookieOidcRefresh(CookieAuthenticationDefaults.AuthenticationScheme, OIDC_SCHEME);
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddCascadingAuthenticationState();
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
@@ -32,5 +62,7 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.MapGroup("/auth").MapLoginAndLogout();
 
 app.Run();

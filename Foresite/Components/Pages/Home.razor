@@ -1,31 +1,40 @@
 ﻿@page "/"
 @using System.Text.RegularExpressions
 @using Foresite.Services
+@using System.Web
 @inject WhazzupService whazzup
 @inject NavigationManager nav
 
 <PageTitle>Foresite Home</PageTitle>
 
-<p>There are @(whazzup.Data?.clients.pilots.Length ?? 0) pilots connected</p>
+<AuthorizeView>
+	<Authorized>
+		<p>Hello @(context.User.Identity?.Name ?? "???")! here are @(whazzup.Data?.clients.pilots.Length ?? 0) pilots connected</p>
 
-<table>
-	<tr>
-		<th>UserId</th>
-		<th>Departure</th>
-		<th>Arrival</th>
-		<th>CallSign</th>
-	</tr>
+		<table>
+			<tr>
+				<th>UserId</th>
+				<th>Departure</th>
+				<th>Arrival</th>
+				<th>CallSign</th>
+			</tr>
 
-	@foreach (Pilot pilot in whazzup.Data?.clients.pilots ?? [])
-	{
-		<tr>
-			<td onmousedown="@(() => nav.NavigateTo($"https://ivao.aero/Member.aspx?ID={pilot.userId}"))">@pilot.userId</td>
-			<td>@pilot.flightPlan?.departureId</td>
-			<td>@pilot.flightPlan?.arrivalId</td>
-			<td>@pilot.callsign</td>
-		</tr>
-	}
-</table>
+			@foreach (Pilot pilot in whazzup.Data?.clients.pilots ?? [])
+			{
+				<tr>
+					<td onmousedown="@(() => nav.NavigateTo($"https://ivao.aero/Member.aspx?ID={pilot.userId}"))">@pilot.userId</td>
+					<td>@pilot.flightPlan?.departureId</td>
+					<td>@pilot.flightPlan?.arrivalId</td>
+					<td>@pilot.callsign</td>
+				</tr>
+			}
+		</table>
+	</Authorized>
+	<NotAuthorized>
+		<a href="/auth/login?returnUrl=@(HttpUtility.UrlEncode("https://localhost:7284/"))">Go sign in and come back.</a>
+	</NotAuthorized>
+</AuthorizeView>
+
 @code
 {
 	protected override void OnAfterRender(bool firstRender)
