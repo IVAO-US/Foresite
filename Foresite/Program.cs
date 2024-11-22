@@ -14,8 +14,9 @@ builder.Services.AddSingleton<CifpService>();
 
 var app = builder.Build();
 
-// Force load of CIFPs.
+// Force load of CIFPs & Whazzup.
 _ = app.Services.GetRequiredService<CifpService>().Cifp;
+_ = app.Services.GetRequiredService<WhazzupService>();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
