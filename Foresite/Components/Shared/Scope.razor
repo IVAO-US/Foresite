@@ -158,6 +158,7 @@
 			await ctx.EndBatchAsync();
 		}
 		catch (Microsoft.JSInterop.JSDisconnectedException) { } // Client disconnected.
+		catch (System.Threading.Tasks.TaskCanceledException) { } // Client refused to draw.
 		finally {
 			_drawingLock.Release();
 		}

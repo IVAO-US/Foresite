@@ -7,7 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Notes\**" />
+    <Content Remove="Notes\**" />
+    <EmbeddedResource Remove="Notes\**" />
+    <None Remove="Notes\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Blazor.Extensions.Canvas" Version="1.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>

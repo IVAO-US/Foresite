@@ -1,33 +1,35 @@
 ﻿@page "/"
 @using System.Text.RegularExpressions
 @using Foresite.Services
+@using Foresite.Components.Shared
 @inject WhazzupService whazzup
 @inject NavigationManager nav
+@inject CifpService cifp
+@using Microsoft.AspNetCore.Components.QuickGrid
+
 
 <PageTitle>Foresite Home</PageTitle>
 
-<p>There are @(whazzup.Data?.clients.pilots.Length ?? 0) pilots connected</p>
-
-<table>
-	<tr>
-		<th>UserId</th>
-		<th>Departure</th>
-		<th>Arrival</th>
-		<th>CallSign</th>
-	</tr>
-
-	@foreach (Pilot pilot in whazzup.Data?.clients.pilots ?? [])
+<Scope></Scope>
+<div>
+	@foreach (var pilots in (IEnumerable<Pilot>[])[_pilots.Where(p => p.flightPlan!.IsUsDeparture()), _pilots.Where(p => p.flightPlan!.IsUsArrival())])
 	{
-		<tr>
-			<td onmousedown="@(() => nav.NavigateTo($"https://ivao.aero/Member.aspx?ID={pilot.userId}"))">@pilot.userId</td>
-			<td>@pilot.flightPlan?.departureId</td>
-			<td>@pilot.flightPlan?.arrivalId</td>
-			<td>@pilot.callsign</td>
-		</tr>
+		<QuickGrid Items="pilots.OrderByDescending(p => cifp.Cifp.Aerodromes[p.flightPlan!.IsUsDeparture() ? p.flightPlan!.departureId! : p.flightPlan!.arrivalId!].Location.Latitude).AsQueryable()">
+			<PropertyColumn Title="VID" Property="@(p => p.userId)" Sortable="true" />
+			<PropertyColumn Title="Departure" Property="@(p => p.flightPlan!.departureId)" Sortable="true" />
+			<PropertyColumn Title="Arrival" Property="@(p => p.flightPlan!.arrivalId)" Sortable="true" />
+			<PropertyColumn Title="Callsign" Property="@(p => p.callsign)" Sortable="true" />
+		</QuickGrid>
 	}
-</table>
+</div>
+
+<p>There are @_pilots.Length pilots connected</p>
+
+
 @code
 {
+	Pilot[] _pilots => whazzup.Data?.clients.pilots ?? [];
+
 	protected override void OnAfterRender(bool firstRender)
 	{
 		if (!firstRender)

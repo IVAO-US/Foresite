@@ -6,10 +6,9 @@ public class WhazzupService
 
     public WhazzupDigest? Data => _data;
 
-
     public event Action<WhazzupDigest?>? DataUpdated;
 
-    HttpClient _http;
+    readonly HttpClient _http;
     WhazzupDigest? _data;
 
     public WhazzupService(HttpClient http)
@@ -44,10 +43,11 @@ public static class WhazzupExtensions
     public static bool IsUsArrival(this Flightplan fpl) => fpl.arrivalId is string a && (a.StartsWith('K') || a.StartsWith("PH") || a.StartsWith("PA") || a.StartsWith("TJ"));
 }
 
-
 public class WhazzupDigest
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+#pragma warning disable IDE0079
+#pragma warning disable IDE1006
     public string updatedAt { get; set; }
 
     public Server[] servers { get; set; }
@@ -258,4 +258,4 @@ public class Voiceserver
     public int currentConnections { get; set; }
     public int maximumConnections { get; set; }
 }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+#pragma warning restore
