@@ -43,36 +43,29 @@ public class WhazzupService
 
 public static class WhazzupExtensions
 {
-    //public static bool IsUsDeparture(this Flightplan fpl) => fpl.departureId is string d && (d.StartsWith('K') || d.StartsWith("PH") || d.StartsWith("PA") || d.StartsWith("TJ"));
-
     public static bool IsUsDeparture(this Flightplan fpl)
     {
-        if (fpl.departureId is not string d) return false;
+        if (fpl.departureId is not string d) 
+            return false;
+
         return d.StartsWith('K') || d.StartsWith("PH") || d.StartsWith("PA") || d.StartsWith("TJ");
     }
 
-    //public static bool IsUsArrival(this Flightplan fpl) => fpl.arrivalId is string a && (a.StartsWith('K') || a.StartsWith("PH") || a.StartsWith("PA") || a.StartsWith("TJ"));
     public static bool IsUsArrival(this Flightplan fpl)
     {
-        if (fpl.arrivalId is not string a) return false;
+        if (fpl.arrivalId is not string a) 
+            return false;
+
         return a.StartsWith('K') || a.StartsWith("PH") || a.StartsWith("PA") || a.StartsWith("TJ");
     }
 
-    public static string FormatAltitude(this Lasttrack ltr)
+    public static string FormatAltitude(this Lasttrack ltr) => ltr.altitude switch
     {
-        if (ltr.altitude >= 18000)
-        {
-            return "FL" + (Math.Round(ltr.altitude / 1000.0) * 1000).ToString()[..3];
-        }
-        else if (ltr.onGround)
-        {
-            return "--";
-        }
-        else
-        {
-            return $"{ltr.altitude:N0} ft";
-        }
-    }
+        _ when ltr.onGround => "GND",
+        >= 18000 => $"FL{ltr.altitude / 100:000}",
+        _ => $"{ltr.altitude} ft"
+    };
+
 
     public static string FormatSpeed(this Lasttrack ltr)
     {
