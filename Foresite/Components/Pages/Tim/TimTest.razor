@@ -1,0 +1,92 @@
+﻿@page "/ttest"
+
+@using System.Text.RegularExpressions
+@using Foresite.Services
+@inject WhazzupService whazzup
+@inject NavigationManager nav
+@inject CifpService cifp
+@using Microsoft.AspNetCore.Components.QuickGrid
+@implements IDisposable
+
+<PageTitle>Foresite GRID TEST</PageTitle>
+
+<div class="container">
+	<div class="center">
+		<h1>US Departures and Arrivals</h1>
+		<h2>There are @_pilots.Length US of @_connections.pilot WW pilots connected</h2>
+		<div id="clock" class="center"><h3>@currentDateTime</h3></div>
+	</div>
+</div>
+<div class="flex-container">
+	<div>
+		<h1 class="center">Departures</h1>
+		<QuickGrid Items="_pilots.Where(p => p.flightPlan?.IsUsDeparture() ?? false).OrderByDescending(p => cifp.Cifp.Aerodromes[p.flightPlan!.IsUsDeparture() ? p.flightPlan!.departureId! : p.flightPlan!.arrivalId!].Location.Latitude).AsQueryable()">
+			<PropertyColumn Title="Airport" Property="@(p => p.flightPlan!.departureId)" Sortable="true" />
+			<PropertyColumn Title="To" Property="@(p => p.flightPlan!.arrivalId)" Sortable="true" />
+			<PropertyColumn Title="Status" Property="@(p => p.lastTrack!.state)" Sortable="true" />
+			<PropertyColumn Title="Callsign" Property="@(p => p.callsign)" Sortable="true" />
+			<PropertyColumn Title="Altitude" Property="@(p => (p.lastTrack!.FormatAltitude()))" Sortable="true" />
+			<PropertyColumn Title="Speed" Property="@(p => p.lastTrack!.FormatSpeed())" Sortable="true" />
+			<PropertyColumn Title="AcType" Property="@(p => p.flightPlan!.aircraft.icaoCode)" Sortable="true" />
+			@* <PropertyColumn Title="VID" Property="@(p => p.userId)" Sortable="true" /> *@
+		</QuickGrid>
+	</div>
+	<div>
+		<h1 class="center">Arrivals</h1>
+		<QuickGrid Items="_pilots.Where(p => p.flightPlan?.IsUsArrival() ?? false).OrderByDescending(p => cifp.Cifp.Aerodromes[p.flightPlan!.IsUsArrival() ? p.flightPlan!.arrivalId! : p.flightPlan!.departureId!].Location.Latitude).AsQueryable()">
+			<PropertyColumn Title="Airport" Property="@(p => p.flightPlan!.arrivalId)" Sortable="true" />
+			<PropertyColumn Title="Orign" Property="@(p => p.flightPlan!.departureId)" Sortable="true" />
+			<PropertyColumn Title="Status" Property="@(p => p.lastTrack!.state)" Sortable="true" />
+			<PropertyColumn Title="Callsign" Property="@(p => p.callsign)" Sortable="true" />
+			<PropertyColumn Title="Altitude" Property="@(p => (p.lastTrack!.FormatAltitude()))" Sortable="true" />
+			<PropertyColumn Title="Speed" Property="@(p => p.lastTrack!.FormatSpeed())" Sortable="true" />
+			<PropertyColumn Title="Remaining" Property="@(p => p.lastTrack!.CalculateRemainingTime())" Sortable="true" />
+			<PropertyColumn Title="AcType" Property="@(p => p.flightPlan!.aircraft.icaoCode)" Sortable="true" />
+			@* <PropertyColumn Title="VID" Property="@(p => p.userId)" Sortable="true" /> *@
+		</QuickGrid>
+	</div>
+</div>
+
+@code
+{
+	Pilot[] _pilots => whazzup.Data?.clients.pilots ?? [];
+	Connections _connections => whazzup.Data!.connections;
+
+	protected override void OnAfterRender(bool firstRender)
+	{
+		if (!firstRender)
+			return;
+
+		whazzup.DataUpdated += async _ => await InvokeAsync(StateHasChanged);
+	}
+
+	private string currentDateTime = "";
+	private System.Timers.Timer timer = new System.Timers.Timer();
+
+	protected override async Task OnInitializedAsync()
+	{
+		timer.Interval = 1000;
+		timer.Elapsed += OnTimerTick!;
+		timer.Start();
+		await UpdateClock();
+	}
+
+	private async Task UpdateClock()
+	{
+		currentDateTime = DateTime.UtcNow.ToString("R");
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private void OnTimerTick(object sender, System.Timers.ElapsedEventArgs e)
+	{
+		InvokeAsync(UpdateClock);
+	}
+
+	public void Dispose()
+	{
+		timer.Stop();
+		timer.Dispose();
+	}
+
+
+}
