@@ -1,4 +1,8 @@
-﻿namespace Foresite.Services;
+﻿using System.Reflection.Metadata.Ecma335;
+using System.Runtime.CompilerServices;
+using CIFPReader;
+
+namespace Foresite.Services;
 
 public class WhazzupService
 {
@@ -48,10 +52,67 @@ public class WhazzupService
 
 public static class WhazzupExtensions
 {
-	public static bool IsUsDeparture(this Flightplan fpl) => fpl.departureId is string d && (d.StartsWith('K') || d.StartsWith("PH") || d.StartsWith("PA") || d.StartsWith("TJ"));
-	public static bool IsUsArrival(this Flightplan fpl) => fpl.arrivalId is string a && (a.StartsWith('K') || a.StartsWith("PH") || a.StartsWith("PA") || a.StartsWith("TJ"));
-}
+    public static bool IsUsDeparture(this Flightplan fpl)
+    {
+        if (fpl.departureId is not string d) 
+            return false;
 
+        return d.StartsWith('K') || d.StartsWith("PH") || d.StartsWith("PA") || d.StartsWith("TJ");
+    }
+
+    public static bool IsUsArrival(this Flightplan fpl)
+    {
+        if (fpl.arrivalId is not string a) 
+            return false;
+
+        return a.StartsWith('K') || a.StartsWith("PH") || a.StartsWith("PA") || a.StartsWith("TJ");
+    }
+
+    public static string FormatAltitude(this Lasttrack ltr) => ltr.altitude switch
+    {
+        _ when ltr.onGround => "GND",
+        >= 18000 => $"FL{ltr.altitude / 100:000}",
+        _ => $"{ltr.altitude} ft"
+    };
+
+
+    public static string FormatSpeed(this Lasttrack ltr)
+    {
+        if (ltr.altitude >= 24000)
+        {
+            double machSpeed = ltr.groundSpeed / (20.1 * (Math.Sqrt(288.15 - (ltr.altitude / 1000.0 * 2)) * (3.6 / 1.852)));
+            return "M" + machSpeed.ToString("F2");
+        }
+        else if (ltr.groundSpeed == 0 || ltr.onGround)
+        {
+            return "--";
+        }
+        else
+        {
+            return ltr.groundSpeed.ToString() + " kts";
+        }
+    }
+
+    public static string CalculateRemainingTime(this Lasttrack ltr)
+    {
+        if (ltr.onGround)
+        {
+            return "00:00";
+        }
+        double remainingHours = (Convert.ToDouble(ltr.arrivalDistance) / Convert.ToDouble(ltr.groundSpeed) * 3600);
+
+        if (remainingHours < TimeSpan.MaxValue.TotalSeconds && remainingHours > TimeSpan.MinValue.TotalSeconds)
+        {
+            TimeSpan timeSpan = TimeSpan.FromSeconds(remainingHours);
+            return timeSpan.ToString(@"hh\:mm");
+        }
+        else
+        {
+            return "00:00";
+        }
+    }
+
+}
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 #pragma warning disable IDE1006 // Upper case not permitted due to JSON deserialization requirements.

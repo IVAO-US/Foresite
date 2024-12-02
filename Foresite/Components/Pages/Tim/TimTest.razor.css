@@ -1,0 +1,14 @@
+﻿
+.flex-container {
+    display: flex;
+}
+
+ .flex-container > div {
+        margin: 10px;
+        padding: 20px;
+        font-size: 18px;
+    }
+
+.center {
+    text-align: center;
+}

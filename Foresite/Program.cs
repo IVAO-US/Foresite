@@ -6,63 +6,80 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 const string OIDC_SCHEME = "ivao";
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-builder.Services.AddAuthentication(OIDC_SCHEME)
-	.AddOpenIdConnect(OIDC_SCHEME, oidcOptions =>
-	{
-		oidcOptions.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-		oidcOptions.Scope.Add(OpenIdConnectScope.OpenIdProfile);
-		oidcOptions.Authority = "https://api.ivao.aero/";
-		oidcOptions.ClientId = "0202bfa6-1a63-47a7-a0fd-91a6395c756a";
-		oidcOptions.ResponseType = OpenIdConnectResponseType.Code;
-		oidcOptions.MapInboundClaims = false;
-		oidcOptions.TokenValidationParameters.NameClaimType = "nickname";
-		oidcOptions.TokenValidationParameters.RoleClaimType = "roles";
-	})
-	.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
-
-// ConfigureCookieOidcRefresh attaches a cookie OnValidatePrincipal callback to get
-// a new access token when the current one expires, and reissue a cookie with the
-// new access token saved inside. If the refresh fails, the user will be signed
-// out. OIDC connect options are set for saving tokens and the offline access
-// scope.
-builder.Services.ConfigureCookieOidcRefresh(CookieAuthenticationDefaults.AuthenticationScheme, OIDC_SCHEME);
-
-builder.Services.AddAuthorization();
-
-builder.Services.AddCascadingAuthenticationState();
-
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddHttpClient();
-builder.Services.AddSingleton<WhazzupService>();
-builder.Services.AddSingleton<CifpService>();
-
-var app = builder.Build();
-
-// Force load of CIFPs & Whazzup.
-_ = app.Services.GetRequiredService<CifpService>().Cifp;
-_ = app.Services.GetRequiredService<WhazzupService>();
-
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+try
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+	var builder = WebApplication.CreateBuilder(args);
+
+	// Add services to the container.
+	builder.Services.AddAuthentication(OIDC_SCHEME)
+		.AddOpenIdConnect(OIDC_SCHEME, oidcOptions =>
+		{
+			oidcOptions.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+			oidcOptions.Scope.Add(OpenIdConnectScope.OpenIdProfile);
+			oidcOptions.Authority = "https://api.ivao.aero/";
+			oidcOptions.ClientId = "0202bfa6-1a63-47a7-a0fd-91a6395c756a";
+			oidcOptions.ResponseType = OpenIdConnectResponseType.Code;
+			oidcOptions.MapInboundClaims = false;
+			oidcOptions.TokenValidationParameters.NameClaimType = "nickname";
+			oidcOptions.TokenValidationParameters.RoleClaimType = "roles";
+		})
+		.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
+
+	// ConfigureCookieOidcRefresh attaches a cookie OnValidatePrincipal callback to get
+	// a new access token when the current one expires, and reissue a cookie with the
+	// new access token saved inside. If the refresh fails, the user will be signed
+	// out. OIDC connect options are set for saving tokens and the offline access
+	// scope.
+	builder.Services.ConfigureCookieOidcRefresh(CookieAuthenticationDefaults.AuthenticationScheme, OIDC_SCHEME);
+
+	builder.Services.AddAuthorization();
+
+	builder.Services.AddCascadingAuthenticationState();
+
+	builder.Services.AddRazorComponents()
+		.AddInteractiveServerComponents();
+
+	builder.Services.AddHttpContextAccessor();
+	builder.Services.AddHttpClient();
+	builder.Services.AddSingleton<WhazzupService>();
+	builder.Services.AddSingleton<CifpService>();
+
+	var app = builder.Build();
+
+	// Force load of CIFPs & Whazzup.
+	_ = app.Services.GetRequiredService<CifpService>().Cifp;
+	_ = app.Services.GetRequiredService<WhazzupService>();
+
+	// Configure the HTTP request pipeline.
+	if (!app.Environment.IsDevelopment())
+	{
+		app.UseExceptionHandler("/Error", createScopeForErrors: true);
+		// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+		app.UseHsts();
+	}
+
+	app.UseHttpsRedirection();
+	app.MapStaticAssets();
+	app.UseAntiforgery();
+
+	app.MapRazorComponents<App>()
+		.AddInteractiveServerRenderMode();
+
+	app.MapGroup("/auth").MapLoginAndLogout();
+
+	app.Run();
 }
+catch (Exception ex)
+{
+	// Log it so we can at least try to read it in a way that makes some semblance of sense.
+	Console.Error.WriteLine(ex.Message);
+	Console.Error.WriteLine(ex.StackTrace);
 
-app.UseHttpsRedirection();
-app.MapStaticAssets();
-app.UseAntiforgery();
+#if DEBUG
+    File.WriteAllText("foresite.err", $"ERROR {DateTime.UtcNow:R}: {ex.Message}\n{ex.StackTrace}");
+#else
+	File.WriteAllText(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? ".", "foresite.err"), $"ERROR {DateTime.UtcNow:R}: {ex.Message}\n{ex.StackTrace}");
+#endif
 
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-
-app.MapGroup("/auth").MapLoginAndLogout();
-
-app.Run();
+	throw;
+}
