@@ -6,18 +6,30 @@
 @using System.Collections.Immutable
 @inject IJSRuntime js
 @inject CifpService cifp
+@inject NavigationManager nav
 @inject WhazzupService whazzup
 
-<div @onmousemove="MouseMoveAsync">
+<div class="background" @onmousemove="MouseMoveAsync">
 	<BECanvas Height="@_canvasHeight" Width="@_canvasWidth" @ref="_dynamicCanvas" />
 	<BECanvas Height="@_canvasHeight" Width="@_canvasWidth" @ref="_staticCanvas" />
+</div>
+
+<div class="header">
+	<ForesiteAuthorizeView>
+		<SignedIn>
+			<button @onclick="@(() => nav.NavigateNewTab(js, context.ProfileUrl))">@context.DisplayName</button>
+		</SignedIn>
+		<NotSignedIn>
+			<button class="attention" @onclick="nav.Authenticate">Sign In</button>
+		</NotSignedIn>
+	</ForesiteAuthorizeView>
 </div>
 
 <HeadContent>
 	<style>
 		body {
-		overflow: hidden;
-		background-color: black;
+			overflow: hidden;
+			background-color: black;
 		}
 	</style>
 </HeadContent>
@@ -142,8 +154,8 @@
 			}
 
 			await ctx.SetFillStyleAsync("red");
-			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => 
-				p.lastTrack is Lasttrack lt && 
+			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p =>
+				p.lastTrack is Lasttrack lt &&
 				EnforceBoxes(WorldToScreen(new(lt.latitude, lt.longitude))) is (double x, double y) &&
 				Math.Abs(Math.Pow(_lastMousePosition.x - x, 2) + Math.Pow(_lastMousePosition.y - y, 2)) < 25
 			) ?? [])
@@ -160,7 +172,8 @@
 		}
 		catch (Microsoft.JSInterop.JSDisconnectedException) { } // Client disconnected.
 		catch (System.Threading.Tasks.TaskCanceledException) { } // Client refused to draw.
-		finally {
+		finally
+		{
 			_drawingLock.Release();
 		}
 	}
@@ -223,7 +236,7 @@
 			{
 				// Hawaii.
 				x = x / HAWAII_SCALE + _hawaiiTopLeft.x;
-				y = (y - (_canvasHeight - _hawaiiSize.y)) / HAWAII_SCALE + _hawaiiTopLeft.y; 
+				y = (y - (_canvasHeight - _hawaiiSize.y)) / HAWAII_SCALE + _hawaiiTopLeft.y;
 			}
 			else
 			{

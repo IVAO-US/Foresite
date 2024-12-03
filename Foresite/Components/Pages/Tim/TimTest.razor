@@ -1,11 +1,12 @@
 ﻿@page "/ttest"
 
 @using System.Text.RegularExpressions
+@using System.Web
 @using Foresite.Services
+@using Microsoft.AspNetCore.Components.QuickGrid
 @inject WhazzupService whazzup
 @inject NavigationManager nav
 @inject CifpService cifp
-@using Microsoft.AspNetCore.Components.QuickGrid
 @implements IDisposable
 
 <PageTitle>Foresite GRID TEST</PageTitle>
@@ -15,6 +16,14 @@
 		<h1>US Departures and Arrivals</h1>
 		<h2>There are @_pilots.Length US of @_connections.pilot WW pilots connected</h2>
 		<div id="clock" class="center"><h3>@currentDateTime</h3></div>
+		<ForesiteAuthorizeView>
+			<SignedIn>
+				<div class="center">Viewing as @context.DisplayName</div>
+			</SignedIn>
+			<NotSignedIn>
+				<button @onclick="nav.Authenticate">Sign In</button>
+			</NotSignedIn>
+		</ForesiteAuthorizeView>
 	</div>
 </div>
 <div class="flex-container">
@@ -28,7 +37,13 @@
 			<PropertyColumn Title="Altitude" Property="@(p => (p.lastTrack!.FormatAltitude()))" Sortable="true" />
 			<PropertyColumn Title="Speed" Property="@(p => p.lastTrack!.FormatSpeed())" Sortable="true" />
 			<PropertyColumn Title="AcType" Property="@(p => p.flightPlan!.aircraft.icaoCode)" Sortable="true" />
-			@* <PropertyColumn Title="VID" Property="@(p => p.userId)" Sortable="true" /> *@
+			<TemplateColumn Title="VID" Sortable="true">
+				<ForesiteAuthorizeView>
+					<SignedIn Context="_">
+						@context.userId
+					</SignedIn>
+				</ForesiteAuthorizeView>
+			</TemplateColumn>
 		</QuickGrid>
 	</div>
 	<div>
@@ -42,7 +57,13 @@
 			<PropertyColumn Title="Speed" Property="@(p => p.lastTrack!.FormatSpeed())" Sortable="true" />
 			<PropertyColumn Title="Remaining" Property="@(p => p.lastTrack!.CalculateRemainingTime())" Sortable="true" />
 			<PropertyColumn Title="AcType" Property="@(p => p.flightPlan!.aircraft.icaoCode)" Sortable="true" />
-			@* <PropertyColumn Title="VID" Property="@(p => p.userId)" Sortable="true" /> *@
+			<TemplateColumn Title="VID" Sortable="true">
+				<ForesiteAuthorizeView>
+					<SignedIn Context="_">
+						@context.userId
+					</SignedIn>
+				</ForesiteAuthorizeView>
+			</TemplateColumn>
 		</QuickGrid>
 	</div>
 </div>
