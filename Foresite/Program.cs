@@ -52,7 +52,7 @@ try
 
 	// GitHub build pipeline to generate assets.
 	if (app.Environment.IsEnvironment("Deploy"))
-		return;
+		Environment.Exit(0);
 
 	// Configure the HTTP request pipeline.
 	if (!app.Environment.IsDevelopment())

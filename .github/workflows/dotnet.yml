@@ -24,13 +24,17 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet publish Foresite/Foresite.csproj -o publish
+    - name: Generate static assets
+      env:
+        ASPNETCORE_ENVIRONMENT: Deploy
+      run: dotnet run --project Foresite/Foresite.csproj --environment Deploy
     - name: Deploy
       run: |
         git switch -c deploy
+        mv Foresite/cifp publish
         rm -rf Foresite Foresite.sln
         mv publish/* .
         rm -rf publish
-        dotnet run -c Deploy
         git config user.name "Github Workflow"; git config user.email "us-wm+github@ivao.aero"
         git add -f *; git commit -m "Automated deployment $(date +'%Y-%m-%d %H:%M:%S')"
         git push --force --set-upstream origin deploy
