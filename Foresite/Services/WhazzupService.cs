@@ -48,65 +48,65 @@ public class WhazzupService
 
 public static class WhazzupExtensions
 {
-    public static bool IsUsDeparture(this Flightplan fpl)
-    {
-        if (fpl.departureId is not string d) 
-            return false;
+	public static bool IsUsDeparture(this Flightplan fpl)
+	{
+		if (fpl.departureId is not string d) 
+			return false;
 
-        return d.StartsWith('K') || d.StartsWith("PH") || d.StartsWith("PA") || d.StartsWith("TJ");
-    }
+		return d.StartsWith('K') || d.StartsWith("PH") || d.StartsWith("PA") || d.StartsWith("TJ");
+	}
 
-    public static bool IsUsArrival(this Flightplan fpl)
-    {
-        if (fpl.arrivalId is not string a) 
-            return false;
+	public static bool IsUsArrival(this Flightplan fpl)
+	{
+		if (fpl.arrivalId is not string a) 
+			return false;
 
-        return a.StartsWith('K') || a.StartsWith("PH") || a.StartsWith("PA") || a.StartsWith("TJ");
-    }
+		return a.StartsWith('K') || a.StartsWith("PH") || a.StartsWith("PA") || a.StartsWith("TJ");
+	}
 
-    public static string FormatAltitude(this Lasttrack ltr) => ltr.altitude switch
-    {
-        _ when ltr.onGround => "GND",
-        >= 18000 => $"FL{ltr.altitude / 100:000}",
-        _ => $"{ltr.altitude} ft"
-    };
+	public static string FormatAltitude(this Lasttrack ltr) => ltr.altitude switch
+	{
+		_ when ltr.onGround => "GND",
+		>= 18000 => $"FL{ltr.altitude / 100:000}",
+		_ => $"{ltr.altitude} ft"
+	};
 
 
-    public static string FormatSpeed(this Lasttrack ltr)
-    {
-        if (ltr.altitude >= 24000)
-        {
-            double machSpeed = ltr.groundSpeed / (20.1 * (Math.Sqrt(288.15 - (ltr.altitude / 1000.0 * 2)) * (3.6 / 1.852)));
-            return "M" + machSpeed.ToString("F2");
-        }
-        else if (ltr.groundSpeed == 0 || ltr.onGround)
-        {
-            return "--";
-        }
-        else
-        {
-            return ltr.groundSpeed.ToString() + " kts";
-        }
-    }
+	public static string FormatSpeed(this Lasttrack ltr)
+	{
+		if (ltr.altitude >= 24000)
+		{
+			double machSpeed = ltr.groundSpeed / (20.1 * (Math.Sqrt(288.15 - (ltr.altitude / 1000.0 * 2)) * (3.6 / 1.852)));
+			return "M" + machSpeed.ToString("F2");
+		}
+		else if (ltr.groundSpeed == 0 || ltr.onGround)
+		{
+			return "--";
+		}
+		else
+		{
+			return ltr.groundSpeed.ToString() + " kts";
+		}
+	}
 
-    public static string CalculateRemainingTime(this Lasttrack ltr)
-    {
-        if (ltr.onGround)
-        {
-            return "00:00";
-        }
-        double remainingHours = (Convert.ToDouble(ltr.arrivalDistance) / Convert.ToDouble(ltr.groundSpeed) * 3600);
+	public static string CalculateRemainingTime(this Lasttrack ltr)
+	{
+		if (ltr.onGround)
+		{
+			return "00:00";
+		}
+		double remainingHours = (Convert.ToDouble(ltr.arrivalDistance) / Convert.ToDouble(ltr.groundSpeed) * 3600);
 
-        if (remainingHours < TimeSpan.MaxValue.TotalSeconds && remainingHours > TimeSpan.MinValue.TotalSeconds)
-        {
-            TimeSpan timeSpan = TimeSpan.FromSeconds(remainingHours);
-            return timeSpan.ToString(@"hh\:mm");
-        }
-        else
-        {
-            return "00:00";
-        }
-    }
+		if (remainingHours < TimeSpan.MaxValue.TotalSeconds && remainingHours > TimeSpan.MinValue.TotalSeconds)
+		{
+			TimeSpan timeSpan = TimeSpan.FromSeconds(remainingHours);
+			return timeSpan.ToString(@"hh\:mm");
+		}
+		else
+		{
+			return "00:00";
+		}
+	}
 
 }
 

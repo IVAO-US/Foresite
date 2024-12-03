@@ -76,7 +76,7 @@ catch (Exception ex)
 	Console.Error.WriteLine(ex.StackTrace);
 
 #if DEBUG
-    File.WriteAllText("foresite.err", $"ERROR {DateTime.UtcNow:R}: {ex.Message}\n{ex.StackTrace}");
+	File.WriteAllText("foresite.err", $"ERROR {DateTime.UtcNow:R}: {ex.Message}\n{ex.StackTrace}");
 #else
 	File.WriteAllText(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? ".", "foresite.err"), $"ERROR {DateTime.UtcNow:R}: {ex.Message}\n{ex.StackTrace}");
 #endif
