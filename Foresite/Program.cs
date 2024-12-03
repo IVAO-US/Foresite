@@ -50,6 +50,10 @@ try
 	_ = app.Services.GetRequiredService<CifpService>().Cifp;
 	_ = app.Services.GetRequiredService<WhazzupService>();
 
+	// GitHub build pipeline to generate assets.
+	if (app.Environment.IsEnvironment("Deploy"))
+		return;
+
 	// Configure the HTTP request pipeline.
 	if (!app.Environment.IsDevelopment())
 	{
