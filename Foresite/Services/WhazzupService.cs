@@ -1,8 +1,4 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using System.Runtime.CompilerServices;
-using CIFPReader;
-
-namespace Foresite.Services;
+﻿namespace Foresite.Services;
 
 public class WhazzupService
 {

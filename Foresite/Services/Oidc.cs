@@ -1,17 +1,23 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.JSInterop;
 
 using System.Globalization;
 
 using System.IdentityModel.Tokens.Jwt;
 
 using System.Security.Claims;
+using System.Security.Principal;
+using System.Web;
+
+using static Foresite.Components.Shared.ForesiteAuthorizeView;
 
 namespace Foresite.Services;
 
@@ -158,5 +164,69 @@ internal sealed class CookieOidcRefresher(IOptionsMonitor<OpenIdConnectOptions> 
 			new() { Name = "token_type", Value = message.TokenType },
 			new() { Name = "expires_at", Value = expiresAt.ToString("o", CultureInfo.InvariantCulture) },
 		]);
+	}
+}
+
+internal static class OidcExtensions
+{
+
+	public static ForesiteUser ToUser(this IIdentity ident)
+	{
+		if (ident is not ClaimsIdentity identity || !identity.HasClaim(c => c.Type == "sub"))
+			throw new ArgumentException("Invalid identity", nameof(ident));
+
+
+		uint vid = uint.Parse(identity.FindFirst("sub")!.Value);
+		string[]? staffPositions = identity.FindFirst("ivao.aero/staff_positions")?.Value.Split().OrderBy(StaffPositionSortOrder).ToArray();
+
+		string name = identity.FindFirst("nickname")?.Value ?? identity.Name ?? "Unknown";
+		string nameSuffix = vid.ToString().PadLeft(6, '0');
+
+		if (staffPositions is not null)
+		{
+			string[] applicablePositions = [..staffPositions.Where(p => (p.StartsWith('K') && p.EndsWith("CH")) || p.StartsWith("US-"))];
+
+			if (applicablePositions.Length > 0)
+				nameSuffix = string.Join(' ', applicablePositions);
+		}
+
+		string profileUrl = identity.FindFirst("profile")?.Value ?? "https://www.ivao.aero/";
+		string division = identity.FindFirst("ivao.aero/division")?.Value ?? "Unknown";
+
+		return new ForesiteUser(
+			vid, $"{name} ({nameSuffix})",
+			[..staffPositions],
+			division == "US" ? ForesiteUser.DivisionStanding.Member : ForesiteUser.DivisionStanding.NonMember,
+			profileUrl,
+			division
+		);
+	}
+
+	internal static int StaffPositionSortOrder(string staffPos)
+	{
+		string posType = staffPos.Split('-')[^1].TrimEnd(Enumerable.Range('0', 10).Select(i => (char)i).ToArray());
+
+		return posType switch {
+			"DIR" => 0,
+			"ADIR" => 1,
+			"WM" => 2,
+			"AOC" or "FOC" or "SOC" or "TC" or "MC" or "EC" or "PRC" => 3,
+			"AWM" or "WMA" => 4,
+			"AOAC" or "FOAC" or "SOAC" or "TAC" or "MAC" or "EAC" or "PRAC" => 5,
+			"CH" => 6,
+			"ACH" or "CHA" => 7,
+			"TA" or "T" => 8,
+			_ => -1 // HQ positions, etc.
+		};
+	}
+
+	public static void Authenticate(this NavigationManager nav)
+	{
+		nav.NavigateTo($"/auth/login?returnUrl={HttpUtility.UrlEncode(nav.Uri)}", true);
+	}
+
+	public static async Task NavigateNewTab(this NavigationManager _, IJSRuntime js, string url)
+	{
+		await js.InvokeVoidAsync("open", url, "_blank");
 	}
 }

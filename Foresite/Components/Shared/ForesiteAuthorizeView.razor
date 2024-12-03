@@ -1,0 +1,34 @@
+﻿@using System.Security.Principal
+
+<AuthorizeView>
+	<Authorized>
+		@if (context.User.Identity is IIdentity ident && SignedIn is not null)
+		{
+			@SignedIn(ident.ToUser())
+		}
+	</Authorized>
+	<NotAuthorized>
+		@(NotSignedIn is not null)
+		{
+		@NotSignedIn
+		}
+	</NotAuthorized>
+</AuthorizeView>
+
+@code {
+	[Parameter]
+	public RenderFragment<ForesiteUser>? SignedIn { get; set; }
+
+	[Parameter]
+	public RenderFragment? NotSignedIn { get; set; }
+
+	public record ForesiteUser(uint Vid, string DisplayName, string[] StaffPositions, ForesiteUser.DivisionStanding Status, string ProfileUrl, string Division)
+	{
+		public enum DivisionStanding
+		{
+			NonMember,
+			GcaHolder,
+			Member,
+		}
+	}
+}
