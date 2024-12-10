@@ -29,10 +29,10 @@
 <div class="flex-container">
 	<div>
 		<h1 class="center">Departures</h1>
-		<QuickGrid Items="_pilots.Where(p => p.flightPlan?.IsUsDeparture() ?? false).OrderByDescending(p => cifp.Cifp.Aerodromes[p.flightPlan!.IsUsDeparture() ? p.flightPlan!.departureId! : p.flightPlan!.arrivalId!].Location.Latitude).AsQueryable()">
+		<QuickGrid Items="_pilots.Where(p => p.Category.HasFlag(WhazzupExtensions.FlightRouteCategory.Departure)).OrderByDescending(p => cifp.Cifp.Aerodromes.Find(p.flightPlan!.departureId!)!.Location.Latitude).AsQueryable()">
 			<PropertyColumn Title="Airport" Property="@(p => p.flightPlan!.departureId)" Sortable="true" />
 			<PropertyColumn Title="To" Property="@(p => p.flightPlan!.arrivalId)" Sortable="true" />
-			<PropertyColumn Title="Status" Property="@(p => p.lastTrack!.state)" Sortable="true" />
+			<PropertyColumn Title="Status" Property="@(p => p.lastTrack!.state.ToString())" Sortable="true" />
 			<PropertyColumn Title="Callsign" Property="@(p => p.callsign)" Sortable="true" />
 			<PropertyColumn Title="Altitude" Property="@(p => (p.lastTrack!.FormatAltitude()))" Sortable="true" />
 			<PropertyColumn Title="Speed" Property="@(p => p.lastTrack!.FormatSpeed())" Sortable="true" />
@@ -48,10 +48,10 @@
 	</div>
 	<div>
 		<h1 class="center">Arrivals</h1>
-		<QuickGrid Items="_pilots.Where(p => p.flightPlan?.IsUsArrival() ?? false).OrderByDescending(p => cifp.Cifp.Aerodromes[p.flightPlan!.IsUsArrival() ? p.flightPlan!.arrivalId! : p.flightPlan!.departureId!].Location.Latitude).AsQueryable()">
+		<QuickGrid Items="_pilots.Where(p => p.Category.HasFlag(WhazzupExtensions.FlightRouteCategory.Arrival)).OrderByDescending(p => cifp.Cifp.Aerodromes.Find(p.flightPlan!.arrivalId!)!.Location.Latitude).AsQueryable()">
 			<PropertyColumn Title="Airport" Property="@(p => p.flightPlan!.arrivalId)" Sortable="true" />
 			<PropertyColumn Title="Orign" Property="@(p => p.flightPlan!.departureId)" Sortable="true" />
-			<PropertyColumn Title="Status" Property="@(p => p.lastTrack!.state)" Sortable="true" />
+			<PropertyColumn Title="Status" Property="@(p => p.lastTrack!.state.ToString())" Sortable="true" />
 			<PropertyColumn Title="Callsign" Property="@(p => p.callsign)" Sortable="true" />
 			<PropertyColumn Title="Altitude" Property="@(p => (p.lastTrack!.FormatAltitude()))" Sortable="true" />
 			<PropertyColumn Title="Speed" Property="@(p => p.lastTrack!.FormatSpeed())" Sortable="true" />

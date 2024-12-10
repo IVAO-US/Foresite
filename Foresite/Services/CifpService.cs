@@ -32,3 +32,26 @@ public sealed class CifpService
 		});
 	}
 }
+
+public static class CifpExtensions
+{
+	public static Aerodrome? Find(this Dictionary<string, Aerodrome> aerodromes, string code)
+	{
+		code = code.ToUpperInvariant();
+
+		// ICAO code check.
+		if (aerodromes.TryGetValue(code, out Aerodrome? icaoAd))
+			// User got it right!
+			return icaoAd;
+
+		// Check IATA & FAA codes
+		if (aerodromes.Values.FirstOrDefault(ad => ad.IATACode == code) is Aerodrome iataAd)
+			return iataAd;
+
+		// Did they add an extra K where it doesn't belong?
+		if (code.StartsWith('K') && code.Length == 4)
+			return aerodromes.Find(code[1..]);
+		else
+			return null;
+	}
+}

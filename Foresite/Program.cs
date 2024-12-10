@@ -41,8 +41,8 @@ try
 
 	builder.Services.AddHttpContextAccessor();
 	builder.Services.AddHttpClient();
-	builder.Services.AddSingleton<WhazzupService>();
 	builder.Services.AddSingleton<CifpService>();
+	builder.Services.AddSingleton<WhazzupService>();
 
 	var app = builder.Build();
 
