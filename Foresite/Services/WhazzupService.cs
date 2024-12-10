@@ -1,6 +1,7 @@
 ﻿using CIFPReader;
 
 using System.Collections.Immutable;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using static Foresite.Services.WhazzupExtensions;
@@ -46,24 +47,33 @@ public class WhazzupService
 
 	async Task<WhazzupDigest?> GetAsync()
 	{
-		if (await _http.GetFromJsonAsync<WhazzupDigest>(WHAZZUP_URL) is not WhazzupDigest w)
-			// Failed. Keep the old data until you get something usable.
+		try
+		{
+			if (await _http.GetFromJsonAsync<WhazzupDigest>(WHAZZUP_URL, new JsonSerializerOptions(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter<FlightRouteCategory>() } }) is not WhazzupDigest w)
+				// Failed. Keep the old data until you get something usable.
+				return _data;
+
+			w.clients.pilots = [..
+				w.clients.pilots
+					.Select(p => {
+						p.Category = p.flightPlan?.GetRouteCategory(_cifp.Cifp) ?? FlightRouteCategory.NonUs;
+						return p;
+					})
+					.Where(p => p.Category is
+							FlightRouteCategory.Departure
+							or FlightRouteCategory.Arrival
+							or FlightRouteCategory.Domestic
+					)
+			];
+
+			return w;
+		}
+		catch (Exception ex)
+		{
+			System.Diagnostics.Debug.WriteLine(ex.ToString(), "ERROR");
+
 			return _data;
-
-		w.clients.pilots = [..
-			w.clients.pilots
-				.Select(p => {
-					p.Category = p.flightPlan?.GetRouteCategory(_cifp.Cifp) ?? WhazzupExtensions.FlightRouteCategory.NonUs;
-					return p;
-				})
-				.Where(p => p.Category is
-						WhazzupExtensions.FlightRouteCategory.Departure
-						or WhazzupExtensions.FlightRouteCategory.Arrival
-						or WhazzupExtensions.FlightRouteCategory.Domestic
-				)
-		];
-
-		return w;
+		}
 	}
 
 }
@@ -135,22 +145,53 @@ public static class WhazzupExtensions
 		}
 	}
 
+	[JsonConverter(typeof(FlightStateJsonConverter))]
 	public enum FlightState
 	{
-		[JsonStringEnumMemberName("Boarding")] Boarding,
-		[JsonStringEnumMemberName("Departing")] Departing,
-		[JsonStringEnumMemberName("Initial Climb")] InitialClimb,
-		[JsonStringEnumMemberName("En Route")] EnRoute,
-		[JsonStringEnumMemberName("Approach")] Approach,
-		[JsonStringEnumMemberName("Landed")] Landed,
-		[JsonStringEnumMemberName("On Blocks")] OnBlocks
+		Boarding,
+		Departing,
+		InitialClimb,
+		EnRoute,
+		Approach,
+		Landed,
+		OnBlocks
 	}
 
-	public static string ToString(this FlightState state) =>
-		string.Join(' ', [
-			.. Enum.GetName(state)?.Aggregate(ImmutableList<string>.Empty, (s, i) => char.IsUpper(i) ? s.Add(i.ToString()) : s.SetItem(s.Count - 1, s[^1] + i))
-			?? ["unknown"]
-		]);
+	public class FlightStateJsonConverter : JsonConverter<FlightState>
+	{
+		public override FlightState Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+		{
+			if (reader.TokenType != JsonTokenType.String || reader.GetString() is not string str)
+				throw new JsonException();
+
+			return str switch {
+				"Boarding" => FlightState.Boarding,
+				"Departing" => FlightState.Departing,
+				"Initial Climb" => FlightState.InitialClimb,
+				"En Route" => FlightState.EnRoute,
+				"Approach" => FlightState.Approach,
+				"Landed" => FlightState.Landed,
+				"On Blocks" => FlightState.OnBlocks,
+				_ => throw new JsonException(),
+			};
+		}
+
+		public override void Write(Utf8JsonWriter writer, FlightState value, JsonSerializerOptions options)
+		{
+			writer.WriteStringValue(value switch {
+				FlightState.Boarding => "Boarding",
+				FlightState.Departing => "Departing",
+				FlightState.InitialClimb => "Initial Climb",
+				FlightState.EnRoute => "En Route",
+				FlightState.Approach => "Approach",
+				FlightState.Landed => "Landed",
+				FlightState.OnBlocks => "On Blocks",
+				_ => throw new JsonException(),
+			});
+		}
+	}
+
+	public static string ToString(this FlightState state) => System.Text.Json.JsonSerializer.Serialize(state);
 }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
@@ -198,7 +239,7 @@ public class Pilot
 	public Pilotsession pilotSession { get; set; }
 	public Lasttrack? lastTrack { get; set; }
 	public Flightplan? flightPlan { get; set; }
-	public WhazzupExtensions.FlightRouteCategory Category { get; set; } = WhazzupExtensions.FlightRouteCategory.NonUs;
+	[JsonIgnore] public FlightRouteCategory Category { get; set; } = FlightRouteCategory.NonUs;
 }
 
 public class Pilotsession
