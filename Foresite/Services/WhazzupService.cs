@@ -1,4 +1,11 @@
-﻿namespace Foresite.Services;
+﻿using CIFPReader;
+
+using System.Collections.Immutable;
+using System.Text.Json.Serialization;
+
+using static Foresite.Services.WhazzupExtensions;
+
+namespace Foresite.Services;
 
 public class WhazzupService
 {
@@ -9,11 +16,14 @@ public class WhazzupService
 	public event Action<WhazzupDigest?>? DataUpdated;
 
 	readonly HttpClient _http;
+	readonly CifpService _cifp;
 	WhazzupDigest? _data;
 
-	public WhazzupService(HttpClient http)
+	public WhazzupService(HttpClient http, CifpService cifp)
 	{
 		_http = http;
+		_cifp = cifp;
+
 		Task.Run(async () =>
 		{
 			while (true)
@@ -40,7 +50,19 @@ public class WhazzupService
 			// Failed. Keep the old data until you get something usable.
 			return _data;
 
-		w.clients.pilots = [.. w.clients.pilots.Where(p => p.flightPlan is Flightplan fpl && (fpl.IsUsDeparture() || fpl.IsUsArrival())).OrderBy(_ => Random.Shared.Next())];
+		w.clients.pilots = [..
+			w.clients.pilots
+				.Select(p => {
+					p.Category = p.flightPlan?.GetRouteCategory(_cifp.Cifp) ?? WhazzupExtensions.FlightRouteCategory.NonUs;
+					return p;
+				})
+				.Where(p => p.Category is
+						WhazzupExtensions.FlightRouteCategory.Departure
+						or WhazzupExtensions.FlightRouteCategory.Arrival
+						or WhazzupExtensions.FlightRouteCategory.Domestic
+				)
+		];
+
 		return w;
 	}
 
@@ -48,24 +70,29 @@ public class WhazzupService
 
 public static class WhazzupExtensions
 {
-	public static bool IsUsDeparture(this Flightplan fpl)
+	public enum FlightRouteCategory
 	{
-		if (fpl.departureId is not string d) 
-			return false;
-
-		return d.StartsWith('K') || d.StartsWith("PH") || d.StartsWith("PA") || d.StartsWith("TJ");
+		/// <summary>The flight does not depart from or arrive into the US.</summary>
+		NonUs = 0b00,
+		/// <summary>The flight departs from a US airport.</summary>
+		Departure = 0b01,
+		/// <summary>The flight arrives into a US airport.</summary>
+		Arrival = 0b10,
+		/// <summary>The flight departs from and arrives into US airports.</summary>
+		Domestic = 0b11
 	}
 
-	public static bool IsUsArrival(this Flightplan fpl)
+	public static FlightRouteCategory GetRouteCategory(this Flightplan fpl, CIFP cifp)
 	{
-		if (fpl.arrivalId is not string a) 
-			return false;
+		bool departingUs = fpl.departureId is string d && (cifp.Aerodromes.Find(d) is not null);
+		bool arrivingUs = fpl.arrivalId is string a && (cifp.Aerodromes.Find(a) is not null);
 
-		return a.StartsWith('K') || a.StartsWith("PH") || a.StartsWith("PA") || a.StartsWith("TJ");
+		return
+			(departingUs ? FlightRouteCategory.Departure : FlightRouteCategory.NonUs)
+			| (arrivingUs ? FlightRouteCategory.Arrival : FlightRouteCategory.NonUs);
 	}
 
-	public static string FormatAltitude(this Lasttrack ltr) => ltr.altitude switch
-	{
+	public static string FormatAltitude(this Lasttrack ltr) => ltr.altitude switch {
 		_ when ltr.onGround => "GND",
 		>= 18000 => $"FL{ltr.altitude / 100:000}",
 		_ => $"{ltr.altitude} ft"
@@ -108,6 +135,22 @@ public static class WhazzupExtensions
 		}
 	}
 
+	public enum FlightState
+	{
+		[JsonStringEnumMemberName("Boarding")] Boarding,
+		[JsonStringEnumMemberName("Departing")] Departing,
+		[JsonStringEnumMemberName("Initial Climb")] InitialClimb,
+		[JsonStringEnumMemberName("En Route")] EnRoute,
+		[JsonStringEnumMemberName("Approach")] Approach,
+		[JsonStringEnumMemberName("Landed")] Landed,
+		[JsonStringEnumMemberName("On Blocks")] OnBlocks
+	}
+
+	public static string ToString(this FlightState state) =>
+		string.Join(' ', [
+			.. Enum.GetName(state)?.Aggregate(ImmutableList<string>.Empty, (s, i) => char.IsUpper(i) ? s.Add(i.ToString()) : s.SetItem(s.Count - 1, s[^1] + i))
+			?? ["unknown"]
+		]);
 }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
@@ -155,6 +198,7 @@ public class Pilot
 	public Pilotsession pilotSession { get; set; }
 	public Lasttrack? lastTrack { get; set; }
 	public Flightplan? flightPlan { get; set; }
+	public WhazzupExtensions.FlightRouteCategory Category { get; set; } = WhazzupExtensions.FlightRouteCategory.NonUs;
 }
 
 public class Pilotsession
@@ -174,7 +218,7 @@ public class Lasttrack
 	public decimal latitude { get; set; }
 	public decimal longitude { get; set; }
 	public bool onGround { get; set; }
-	public string state { get; set; }
+	public FlightState state { get; set; }
 	public DateTime timestamp { get; set; }
 	public int transponder { get; set; }
 	public string transponderMode { get; set; }
