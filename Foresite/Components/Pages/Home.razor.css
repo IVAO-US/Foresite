@@ -1,8 +1,8 @@
-﻿.background, ::deep canvas {
+﻿.background, ::deep canvas, .foreground {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
@@ -13,6 +13,7 @@
 .background {
     width: 100%;
     height: 100%;
+    z-index: -1;
 }
 
     .background ::deep canvas:first-child {
@@ -67,3 +68,63 @@
     .header button.attention:hover {
         color: white;
     }
+
+.pilot {
+    position: absolute;
+}
+
+    .pilot .marker {
+        font-size: 30px;
+        color: chartreuse;
+        position: absolute;
+        font-weight: 600;
+    }
+
+   .pilot:hover {
+       background-color: red;
+   }
+
+.pilot > .infoblock {
+    padding: 10px;
+    position: absolute;
+    bottom: 10px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    text-align: center;
+    z-index: 5;
+    font-family: monospace;
+    border: 2px solid white;
+    color: white;
+    background-color: black;
+
+    display: none;
+}
+
+    .pilot:hover > .infoblock {
+        display: block;
+    }
+
+.pilot .path {
+    pointer-events: none;
+    position: fixed;
+    left: 0; right: 0; top: 0; bottom: 0;
+    z-index: -1;
+
+    display: none;
+}
+
+.pilot:hover .path {
+    display: block;
+}
+
+.path svg .pathline {
+    color: chartreuse;
+}
+
+.path svg .path-departure {
+    fill: chartreuse;
+}
+
+.path svg .path-arrival {
+    fill: blue;
+}
