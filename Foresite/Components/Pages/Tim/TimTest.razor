@@ -15,7 +15,7 @@
 	<div class="center">
 		<h1>US Departures and Arrivals</h1>
 		<h2>There are @_pilots.Length US of @_connections.pilot WW pilots connected</h2>
-		<div id="clock" class="center"><h3>@currentDateTime</h3></div>
+		<div id="clock" class="center"><h3>@DateTime.UtcNow.ToString("R")</h3></div>
 		<ForesiteAuthorizeView>
 			<SignedIn>
 				<div class="center">Viewing as @context.DisplayName</div>
@@ -71,43 +71,25 @@
 @code
 {
 	Pilot[] _pilots => whazzup.Data?.clients.pilots ?? [];
-	Connections _connections => whazzup.Data!.connections;
+	Connections _connections => whazzup.Data?.connections ?? new();
 
 	protected override void OnAfterRender(bool firstRender)
 	{
 		if (!firstRender)
 			return;
 
-		whazzup.DataUpdated += async _ => await InvokeAsync(StateHasChanged);
+		whazzup.DataUpdated += _ => InvokeAsync(StateHasChanged);
+		timer.Elapsed += (_, _) => InvokeAsync(StateHasChanged);
 	}
 
 	private string currentDateTime = "";
-	private System.Timers.Timer timer = new System.Timers.Timer();
-
-	protected override async Task OnInitializedAsync()
-	{
-		timer.Interval = 1000;
-		timer.Elapsed += OnTimerTick!;
-		timer.Start();
-		await UpdateClock();
-	}
-
-	private async Task UpdateClock()
-	{
-		currentDateTime = DateTime.UtcNow.ToString("R");
-		await InvokeAsync(StateHasChanged);
-	}
-
-	private void OnTimerTick(object sender, System.Timers.ElapsedEventArgs e)
-	{
-		InvokeAsync(UpdateClock);
-	}
+	private System.Timers.Timer timer = new System.Timers.Timer(TimeSpan.FromSeconds(1)) {
+		Enabled = true
+	};
 
 	public void Dispose()
 	{
 		timer.Stop();
 		timer.Dispose();
 	}
-
-
 }

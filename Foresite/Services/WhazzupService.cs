@@ -53,10 +53,111 @@ public class WhazzupService
 				// Failed. Keep the old data until you get something usable.
 				return _data;
 
+			CIFP cifp = _cifp.Cifp;
+
 			w.clients.pilots = [..
 				w.clients.pilots
 					.Select(p => {
-						p.Category = p.flightPlan?.GetRouteCategory(_cifp.Cifp) ?? FlightRouteCategory.NonUs;
+						p.Category = p.flightPlan?.GetRouteCategory(cifp) ?? FlightRouteCategory.NonUs;
+
+						if (p.flightPlan?.route?.Split() is string[] routeElems)
+						{
+							List<ICoordinate?> points = [];
+
+							NamedCoordinate last = new("", new(0, 0));
+							Airway? pendingAirway = null;
+
+							if (p.flightPlan!.departureId is string d && (cifp.Aerodromes.Find(d) is Aerodrome depAd))
+							{
+								last = depAd.Location is NamedCoordinate nc ? nc : new(depAd.Name, depAd.Location.GetCoordinate());
+								points.Add(last);
+							}
+
+							string[] wps = [..routeElems.Select(e => e.ToUpperInvariant().Split('/')[0].Trim())];
+							for (int idx = 0; idx < wps.Length; ++idx)
+							{
+								string wp = wps[idx];
+
+								if (wp == "DCT") continue;
+
+								void GenerateAirway(string endpointName)
+								{
+									if (pendingAirway is not Airway aw) return;
+
+									int startIdx = pendingAirway.TakeWhile(awf => awf.Name != last.Name).Count();
+									int endIdx = pendingAirway.TakeWhile(awf => awf.Name != endpointName).Count();
+
+									for (int awfIdx = startIdx; awfIdx != endIdx; awfIdx += startIdx < endIdx ? 1 : -1)
+										points.Add(aw.Skip(awfIdx).First().Point);
+
+									pendingAirway = null;
+								}
+
+								// Check if aerodrome ID.
+								if (cifp.Aerodromes.Find(wp) is Aerodrome wpAd)
+								{
+									GenerateAirway(wpAd.Name);
+									points.Add(wpAd.Location is NamedCoordinate nc ? nc : new NamedCoordinate(wpAd.Name, wpAd.Location.GetCoordinate()));
+								}
+
+								// Check if SID/STAR/IAP.
+								else if (cifp.Procedures.TryGetValue(wp, out var procSet)
+								 && (procSet.FirstOrDefault(pr => pr.Airport == p.flightPlan.departureId || pr.Airport == p.flightPlan.arrivalId) ?? procSet.First()) is Procedure proc)
+								{
+									IEnumerable<Procedure.Instruction?> instructions = proc switch {
+										SID sid when sid.HasRoute(null, wps[idx + 1]) => sid.SelectRoute(null, wps[idx + 1]),
+										STAR star when star.HasRoute(last.Name, null) => star.SelectRoute(last.Name, null),
+										_ => proc.SelectAllRoutes(cifp.Fixes)
+									};
+
+									foreach (Procedure.Instruction? i in instructions)
+									{
+										if (i is null)
+										{
+											points.Add(null);
+											continue;
+										}
+
+										if (i.Endpoint is ICoordinate c)
+											points.Add(c);
+									}
+								}
+
+								// Check if fix.
+								else if (cifp.Fixes.TryGetValue(wp, out var fixes))
+								{
+									ICoordinate fix = fixes.MinBy(f => last.GetCoordinate().DistanceTo(f.GetCoordinate())) ?? fixes.First();
+
+									if (fix is NamedCoordinate nc)
+										last = nc;
+									else
+										last = new(wp, fix.GetCoordinate());
+
+									GenerateAirway(last.Name);
+									points.Add(fix);
+								}
+
+								// Check if airway.
+								else if (cifp.Airways.TryGetValue(wp, out var airways))
+								{
+									if (airways.FirstOrDefault(aw => aw.Any(awf => awf.Name == last.Name)) is Airway naw)
+										pendingAirway = naw;
+								}
+
+								// <shrug>.
+								else
+								{
+									pendingAirway = null;
+									continue;
+								}
+							}
+
+							if (p.flightPlan!.arrivalId is string a && (cifp.Aerodromes.Find(a) is Aerodrome arrAd))
+								points.Add(arrAd.Location is NamedCoordinate nc ? nc : new NamedCoordinate(arrAd.Name, arrAd.Location.GetCoordinate()));
+
+							p.Route = [..points.Where(p => p is null || !(p is NamedCoordinate nc && string.IsNullOrEmpty(nc.Name)))];
+						}
+
 						return p;
 					})
 					.Where(p => p.Category is
@@ -240,6 +341,7 @@ public class Pilot
 	public Lasttrack? lastTrack { get; set; }
 	public Flightplan? flightPlan { get; set; }
 	[JsonIgnore] public FlightRouteCategory Category { get; set; } = FlightRouteCategory.NonUs;
+	[JsonIgnore] public ICoordinate?[] Route { get; set; } = [];
 }
 
 public class Pilotsession
