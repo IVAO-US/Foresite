@@ -1,10 +1,16 @@
 ﻿@using System.Security.Principal
+@using Microsoft.AspNetCore.Authentication
+@inject IHttpContextAccessor contextAccessor
 
 <AuthorizeView>
 	<Authorized>
-		@if (context.User.Identity is IIdentity ident && SignedIn is not null)
+		@if (context.User.Identity is IIdentity ident && SignedIn is not null && _token is not null)
 		{
-			@SignedIn(ident.ToUser())
+			@SignedIn(ident.ToUser(_token))
+		}
+		else if (context.User.Identity is IIdentity ident2 && ChildContent is not null && _token is not null)
+		{
+			@ChildContent(ident2.ToUser(_token))
 		}
 	</Authorized>
 	<NotAuthorized>
@@ -17,12 +23,17 @@
 
 @code {
 	[Parameter]
+	public RenderFragment<ForesiteUser>? ChildContent { get; set; }
+
+	[Parameter]
 	public RenderFragment<ForesiteUser>? SignedIn { get; set; }
 
 	[Parameter]
 	public RenderFragment? NotSignedIn { get; set; }
 
-	public record ForesiteUser(uint Vid, string DisplayName, string[] StaffPositions, ForesiteUser.DivisionStanding Status, string ProfileUrl, string Division)
+	private string? _token = null;
+
+	public record ForesiteUser(uint Vid, string DisplayName, string[] StaffPositions, ForesiteUser.DivisionStanding Status, string ProfileUrl, string Division, string BearerToken)
 	{
 		public enum DivisionStanding
 		{
@@ -30,5 +41,11 @@
 			GcaHolder,
 			Member,
 		}
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		if (contextAccessor.HttpContext is HttpContext context)
+			_token = await context.GetTokenAsync("access_token");
 	}
 }
