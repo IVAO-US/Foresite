@@ -49,7 +49,8 @@ public class RequiredStaffRoleAttribute(params StaffRole[] permittedRoles) : Aut
 		{ StaffRole.DivHq, new(@"US-A?DIR") },
 		{ StaffRole.Membership, new(@"US-MA?C") },
 		{ StaffRole.AtcOps, new(@"US-AOA?C") },
-		{ StaffRole.ArtccStaff, new(@"(KZ..|PHZH|PAZA|PGZU)-A?CH(A\d)?") }
+		{ StaffRole.ArtccStaff, new(@"(KZ..|PHZH|PAZA|PGZU)-A?CH(A\d)?") },
+		{ StaffRole.Training, new(@"US-T(A?C|A\d|0\d)") }
 	};
 #pragma warning restore
 }
@@ -59,5 +60,6 @@ public enum StaffRole
 	DivHq,
 	Membership,
 	AtcOps,
-	ArtccStaff
+	ArtccStaff,
+	Training
 }

@@ -130,7 +130,7 @@ public sealed record Fra(bool Enabled, string Position, PositionType Level, Fra.
 				..(g.DayWed ? (string[])["Wednesday"] : []),
 				..(g.DayThu ? (string[])["Thursday"] : []),
 				..(g.DayFri ? (string[])["Friday"] : []),
-				..(g.DaySat ? (string[])["Satday"] : []),
+				..(g.DaySat ? (string[])["Saturday"] : []),
 			])
 			: new DateTiming(g.Date.Value);
 	}
