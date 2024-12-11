@@ -169,8 +169,8 @@ internal sealed class CookieOidcRefresher(IOptionsMonitor<OpenIdConnectOptions> 
 
 internal static class OidcExtensions
 {
-
-	public static ForesiteUser ToUser(this IIdentity ident)
+	public static async Task<string> GetTokenAsync(this HttpContext context) => (await context.GetTokenAsync("access_token"))!;
+	public static ForesiteUser ToUser(this IIdentity ident, string token)
 	{
 		if (ident is not ClaimsIdentity identity || !identity.HasClaim(c => c.Type == "sub"))
 			throw new ArgumentException("Invalid identity", nameof(ident));
@@ -198,7 +198,8 @@ internal static class OidcExtensions
 			[..staffPositions],
 			division == "US" ? ForesiteUser.DivisionStanding.Member : ForesiteUser.DivisionStanding.NonMember,
 			profileUrl,
-			division
+			division,
+			token
 		);
 	}
 
