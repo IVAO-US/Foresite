@@ -42,8 +42,8 @@ try
 	builder.Services.AddHttpContextAccessor();
 	builder.Services.AddHttpClient();
 	builder.Services.AddHttpContextAccessor();
-	builder.Services.AddSingleton<WhazzupService>();
 	builder.Services.AddSingleton<CifpService>();
+	builder.Services.AddSingleton<WhazzupService>();
 
 	builder.Services.AddScoped<IvaoApiService>();
 

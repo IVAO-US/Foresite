@@ -121,7 +121,7 @@
 			await ctx.ClearRectAsync(0, 0, _canvasWidth, _canvasHeight);
 
 			await ctx.SetFillStyleAsync("white");
-			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => p.lastTrack is not null && p.flightPlan is Flightplan fpl && fpl.IsUsDeparture() && fpl.IsUsArrival()) ?? [])
+			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => p.lastTrack is not null && p.Category is WhazzupExtensions.FlightRouteCategory.Domestic) ?? [])
 			{
 				if (EnforceBoxes(WorldToScreen(new(pilot.lastTrack!.latitude, pilot.lastTrack.longitude))) is not (double x, double y))
 					continue;
@@ -132,7 +132,7 @@
 			}
 
 			await ctx.SetFillStyleAsync("blue");
-			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => p.lastTrack is not null && p.flightPlan is Flightplan fpl && fpl.IsUsDeparture() && !fpl.IsUsArrival()) ?? [])
+			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => p.lastTrack is not null && p.Category is WhazzupExtensions.FlightRouteCategory.Departure) ?? [])
 			{
 				if (EnforceBoxes(WorldToScreen(new(pilot.lastTrack!.latitude, pilot.lastTrack.longitude))) is not (double x, double y))
 					continue;
@@ -143,7 +143,7 @@
 			}
 
 			await ctx.SetFillStyleAsync("green");
-			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => p.lastTrack is not null && p.flightPlan is Flightplan fpl && !fpl.IsUsDeparture()) ?? [])
+			foreach (var pilot in whazzup.Data?.clients.pilots.Where(p => p.lastTrack is not null && p.Category is WhazzupExtensions.FlightRouteCategory.Arrival) ?? [])
 			{
 				if (EnforceBoxes(WorldToScreen(new(pilot.lastTrack!.latitude, pilot.lastTrack.longitude))) is not (double x, double y))
 					continue;
