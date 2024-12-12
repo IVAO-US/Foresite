@@ -47,7 +47,7 @@ public class IvaoApiService(HttpClient _http)
 					_fraCache = (DateTimeOffset.UtcNow, [.. grants.AsParallel().AsUnordered().Select(g => new Fra(g))]);
 					OnCacheUpdated?.Invoke();
 				}
-				catch (Exception ex) { }
+				catch { }
 			}).Wait();
 
 		return _fraCache.Permissions;
