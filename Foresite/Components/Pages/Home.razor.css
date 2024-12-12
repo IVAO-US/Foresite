@@ -37,6 +37,7 @@
     border-bottom-left-radius: 15px;
     padding: 10px;
     background-color: #000000;
+    gap: 8px;
 }
 
     .header > button {

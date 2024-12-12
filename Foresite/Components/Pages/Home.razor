@@ -4,6 +4,7 @@
 @using Blazor.Extensions.Canvas.Canvas2D
 @using CIFPReader
 @using System.Collections.Immutable
+@using static Foresite.Components.Shared.ForesiteAuthorizeView
 @inject IJSRuntime js
 @inject CifpService cifp
 @inject NavigationManager nav
@@ -22,7 +23,6 @@
 		{
 			if (EnforceBoxes(WorldToScreen(new(lt.latitude, lt.longitude))) is not (double, double) localPos)
 				continue;
-
 
 			<div class="pilot pilot-@(pilot.Category.ToString().ToLowerInvariant())" style="left: @($"{localPos.x:0}px"); top: @($"{localPos.y:0}px");">
 				<div class="marker" style="transform: translate(-50%, -50%) rotate(@(lt.heading)deg);">↑</div>
@@ -67,6 +67,9 @@
 <div class="header">
 	<ForesiteAuthorizeView>
 		<SignedIn>
+			<ForesiteAuthorizeView Context="_" PermittedRoles="[StaffRole.AtcOps]">
+				<button @onclick="@(() => nav.NavigateTo("/atc-ops"))">ATC Ops</button>
+			</ForesiteAuthorizeView>
 			<button @onclick="@(() => nav.NavigateNewTab(js, context.ProfileUrl))">@context.DisplayName</button>
 		</SignedIn>
 		<NotSignedIn>
@@ -77,7 +80,7 @@
 
 <HeadContent>
 	<style>
-		body {
+		body:has(.background>canvas) {
 			overflow: hidden;
 			background-color: black;
 		}
