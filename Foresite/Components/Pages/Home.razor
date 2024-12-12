@@ -22,7 +22,6 @@
 			if (EnforceBoxes(WorldToScreen(new(lt.latitude, lt.longitude))) is not (double, double) localPos)
 				continue;
 
-
 			<div class="pilot pilot-@(pilot.Category.ToString().ToLowerInvariant())" style="left: 0@($"{localPos.x:0}px"); top: 0@($"{localPos.y:0}px");">
 				<div class="marker" style="transform: translate(-50%, -50%) rotate(@(lt.heading)deg);">↑</div>
 				<div class="infoblock">
@@ -77,8 +76,8 @@
 <HeadContent>
 	<style>
 		body {
-		overflow: hidden;
-		background-color: black;
+			overflow: hidden;
+			background-color: black;
 		}
 	</style>
 </HeadContent>
@@ -165,6 +164,7 @@
 
 		await ctx.StrokeAsync();
 		await ctx.EndBatchAsync();
+		await InvokeAsync(StateHasChanged);
 	}
 
 	(double x, double y) _lastMousePosition = (0, 0);
