@@ -8,6 +8,7 @@
 @inject CifpService cifp
 @inject NavigationManager nav
 @inject WhazzupService whazzup
+@inject ArcGisService arcgis
 
 <div class="background" @onmousemove="MouseMove">
 	<BECanvas Height="@_canvasHeight" Width="@_canvasWidth" @ref="_dynamicCanvas" />
@@ -22,9 +23,10 @@
 			if (EnforceBoxes(WorldToScreen(new(lt.latitude, lt.longitude))) is not (double, double) localPos)
 				continue;
 
-			<div class="pilot pilot-@(pilot.Category.ToString().ToLowerInvariant())" style="left: 0@($"{localPos.x:0}px"); top: 0@($"{localPos.y:0}px");">
+
+			<div class="pilot pilot-@(pilot.Category.ToString().ToLowerInvariant())" style="left: @($"{localPos.x:0}px"); top: @($"{localPos.y:0}px");">
 				<div class="marker" style="transform: translate(-50%, -50%) rotate(@(lt.heading)deg);">↑</div>
-				<div class="infoblock">
+				<div class="infoblock@(localPos.y < 150 ? " infoblock-below" : "")">
 					@pilot.callsign<br />
 					@if (pilot.flightPlan is Flightplan fpl)
 					{
@@ -112,15 +114,39 @@
 		_hawaiiSize = ((_hawaiiBottomRight.x - _hawaiiTopLeft.x) * HAWAII_SCALE, (_hawaiiBottomRight.y - _hawaiiTopLeft.y) * HAWAII_SCALE);
 
 		if (redraw)
+		{
+			await DrawArtccBoundariesAsync();
 			await DrawCoastlinesAsync();
+		}
 
 		if (_staticCanvas is null || _setup)
 			return;
 
 		_setup = true;
-
-		var dynamicCtx = await _dynamicCanvas.CreateCanvas2DAsync();
 		whazzup.DataUpdated += async _ => await InvokeAsync(StateHasChanged);
+	}
+
+	protected async Task DrawArtccBoundariesAsync()
+	{
+		var ctx = await _dynamicCanvas.CreateCanvas2DAsync();
+		await ctx.BeginBatchAsync();
+		await ctx.SetStrokeStyleAsync("aquamarine");
+		await ctx.BeginPathAsync();
+
+		foreach (var boundary in
+			arcgis.Boundaries
+				.SelectMany(b => b.Boundaries)
+				.Select(b => b.Select(p => EnforceBoxes(WorldToScreen(p))).Where(p => p is not null).Cast<(double x, double y)>().ToArray())
+				.Where(b => b.Length > 1))
+		{
+			await ctx.MoveToAsync(boundary[0].x, boundary[0].y);
+
+			foreach (var pt in boundary[1..].Append(boundary[0]))
+				await ctx.LineToAsync(pt.x, pt.y);
+		}
+		
+		await ctx.StrokeAsync();
+		await ctx.EndBatchAsync();
 	}
 
 	protected async Task DrawCoastlinesAsync()

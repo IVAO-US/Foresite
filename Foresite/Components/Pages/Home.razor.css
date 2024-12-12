@@ -50,24 +50,24 @@
         text-transform: uppercase;
     }
 
-    .header > button:hover {
-        border: 2px solid white;
-        background-color: white;
-        color: black;
-        font-weight: bold;
-        height: 100%;
-        border-radius: 15px;
-        min-width: 128px;
-        text-transform: uppercase;
-    }
+        .header > button:hover {
+            border: 2px solid white;
+            background-color: white;
+            color: black;
+            font-weight: bold;
+            height: 100%;
+            border-radius: 15px;
+            min-width: 128px;
+            text-transform: uppercase;
+        }
 
     .header button.attention {
         background-color: green;
     }
 
-    .header button.attention:hover {
-        color: white;
-    }
+        .header button.attention:hover {
+            color: white;
+        }
 
 .pilot {
     position: absolute;
@@ -80,42 +80,48 @@
         font-weight: 600;
     }
 
-   .pilot:hover {
-       background-color: red;
-   }
+    .pilot:hover {
+        background-color: red;
+    }
 
-.pilot > .infoblock {
-    padding: 10px;
-    position: absolute;
-    bottom: 10px;
-    transform: translateX(-50%);
-    white-space: nowrap;
-    text-align: center;
-    z-index: 5;
-    font-family: monospace;
-    border: 2px solid white;
-    color: white;
-    background-color: black;
+    .pilot > .infoblock {
+        padding: 10px;
+        position: absolute;
+        bottom: 10px;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        text-align: center;
+        z-index: 5;
+        font-family: monospace;
+        border: 2px solid white;
+        color: white;
+        background-color: black;
+        display: none;
+    }
 
-    display: none;
-}
+        .pilot > .infoblock.infoblock-below {
+            top: 15px;
+            bottom: unset;
+        }
 
     .pilot:hover > .infoblock {
         display: block;
     }
 
-.pilot .path {
-    pointer-events: none;
-    position: fixed;
-    left: 0; right: 0; top: 0; bottom: 0;
-    z-index: -1;
+    .pilot .path {
+        pointer-events: none;
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        z-index: -1;
+        display: none;
+    }
 
-    display: none;
-}
-
-.pilot:hover .path {
-    display: block;
-}
+    .pilot:hover .path {
+        display: block;
+    }
 
 .path svg .pathline {
     color: chartreuse;

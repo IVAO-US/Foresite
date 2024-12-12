@@ -42,6 +42,7 @@ try
 	builder.Services.AddHttpContextAccessor();
 	builder.Services.AddHttpClient();
 	builder.Services.AddHttpContextAccessor();
+	builder.Services.AddSingleton<ArcGisService>();
 	builder.Services.AddSingleton<CifpService>();
 	builder.Services.AddSingleton<WhazzupService>();
 
@@ -49,7 +50,8 @@ try
 
 	var app = builder.Build();
 
-	// Force load of CIFPs & Whazzup.
+	// Force load of ArcGis, CIFPs, & Whazzup.
+	_ = app.Services.GetRequiredService<ArcGisService>();
 	_ = app.Services.GetRequiredService<CifpService>().Cifp;
 	_ = app.Services.GetRequiredService<WhazzupService>();
 

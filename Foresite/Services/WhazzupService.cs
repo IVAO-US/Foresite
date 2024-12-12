@@ -1,6 +1,5 @@
 ﻿using CIFPReader;
 
-using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -18,12 +17,14 @@ public class WhazzupService
 
 	readonly HttpClient _http;
 	readonly CifpService _cifp;
+	readonly ArcGisService _gis;
 	WhazzupDigest? _data;
 
-	public WhazzupService(HttpClient http, CifpService cifp)
+	public WhazzupService(HttpClient http, CifpService cifp, ArcGisService gis)
 	{
 		_http = http;
 		_cifp = cifp;
+		_gis = gis;
 
 		Task.Run(async () =>
 		{
@@ -39,7 +40,8 @@ public class WhazzupService
 					if (delay.TotalSeconds > 15.5)
 						delay = TimeSpan.FromSeconds(15.5);
 
-					await Task.Delay(delay);
+					if (delay.TotalSeconds > 0)
+						await Task.Delay(delay);
 				}
 			}
 		});
@@ -94,7 +96,7 @@ public class WhazzupService
 								}
 
 								// Check if aerodrome ID.
-								if (cifp.Aerodromes.Find(wp) is Aerodrome wpAd)
+								if (cifp.Aerodromes.TryGetValue(wp, out Aerodrome? wpAd))
 								{
 									GenerateAirway(wpAd.Name);
 									points.Add(wpAd.Location is NamedCoordinate nc ? nc : new NamedCoordinate(wpAd.Name, wpAd.Location.GetCoordinate()));
@@ -164,6 +166,7 @@ public class WhazzupService
 							FlightRouteCategory.Departure
 							or FlightRouteCategory.Arrival
 							or FlightRouteCategory.Domestic
+							|| IsOverflight(p)
 					)
 			];
 
@@ -177,6 +180,59 @@ public class WhazzupService
 		}
 	}
 
+	private bool IsOverflight(Pilot p)
+	{
+		if (p.lastTrack is not Lasttrack ltr) return false;
+
+		// Careful! This is Euclidean!
+		bool vectorsIntersect(Coordinate vector1From, Coordinate vector1To, (decimal lat, decimal lon) vector2From, (decimal lat, decimal lon) vector2To)
+		{
+			decimal vec1xCoef = vector1To.Latitude - vector1From.Latitude;
+			decimal vec1yCoef = vector1From.Longitude - vector1To.Longitude;
+			decimal vec1Const = (vector1To.Longitude * vector1From.Latitude) - (vector1From.Longitude * vector1To.Latitude);
+
+			decimal checkPoint1 = (vec1xCoef * vector2From.lon) + (vec1yCoef * vector2From.lat) + vec1Const;
+			decimal checkPoint2 = (vec1xCoef * vector2To.lon) + (vec1yCoef * vector2To.lat) + vec1Const;
+
+			// If both check-points are the same side of the line, they don't intersect.
+			if (checkPoint1 > 0 && checkPoint2 > 0) return false;
+			if (checkPoint1 < 0 && checkPoint2 < 0) return false;
+
+			// Now check the other line.
+			decimal vec2xCoef = vector2To.lat - vector2From.lat;
+			decimal vec2yCoef = vector2From.lon - vector2To.lon;
+			decimal vec2Const = (vector2To.lon * vector2From.lat) - (vector2From.lon * vector2To.lat);
+
+			checkPoint1 = (vec2xCoef * vector1From.Longitude) + (vec2yCoef * vector1From.Latitude) + vec2Const;
+			checkPoint2 = (vec2xCoef * vector1To.Longitude) + (vec2yCoef * vector1To.Latitude) + vec2Const;
+
+			// If both check-points are the same side of the line, they don't intersect.
+			if (checkPoint1 > 0 && checkPoint2 > 0) return false;
+			if (checkPoint1 < 0 && checkPoint2 < 0) return false;
+
+			// We'll treat collinear as inside because we don't care.
+			return true;
+		}
+
+		bool inPolygon(Coordinate[] poly)
+		{
+			// Step 1: Check the bounding box. Quick, cheap, and will already filter out most misses.
+			decimal minLat = poly.Min(c => c.Latitude), maxLat = poly.Max(c => c.Latitude);
+			decimal minLon = poly.Min(c => c.Longitude), maxLon = poly.Max(c => c.Longitude);
+
+			if (ltr.latitude < minLat || ltr.latitude > maxLat ||
+				ltr.longitude < minLon || ltr.longitude > maxLon)
+				return false;
+
+			(Coordinate Fst, Coordinate Snd)[] sides = [..poly.Zip(poly[1..].Append(poly[0]))];
+
+			// Count how many lines the aircraft would need to cross to get west of the polygon.
+			return sides.Count(s => vectorsIntersect(s.Fst, s.Snd, (ltr.latitude, ltr.longitude), (ltr.latitude, minLon - 1))) % 2 != 0;
+		}
+
+		// If they're in any of our boundaries, they're fair game!
+		return _gis.Boundaries.Any(b => b.Boundaries.Any(inPolygon));
+	}
 }
 
 public static class WhazzupExtensions
