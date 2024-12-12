@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "GIbTx4eCJXs=",
+  "success": true,
+  "projectFilePath": "/home/runner/work/Foresite/Foresite/CIFPReader/CIFPReader.csproj",
+  "expectedPackageFiles": [
+    "/home/runner/.nuget/packages/awssdk.core/3.7.400.53/awssdk.core.3.7.400.53.nupkg.sha512",
+    "/home/runner/.nuget/packages/awssdk.s3/3.7.406.2/awssdk.s3.3.7.406.2.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.netcore.app.ref/8.0.11/microsoft.netcore.app.ref.8.0.11.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.11/microsoft.aspnetcore.app.ref.8.0.11.nupkg.sha512"
+  ],
+  "logs": []
+}

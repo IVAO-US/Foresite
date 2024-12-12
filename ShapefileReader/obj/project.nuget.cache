@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "4aaijn397qU=",
+  "success": true,
+  "projectFilePath": "/home/runner/work/Foresite/Foresite/ShapefileReader/ShapefileReader.csproj",
+  "expectedPackageFiles": [
+    "/home/runner/.nuget/packages/system.memory/4.6.0/system.memory.4.6.0.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.netcore.app.ref/8.0.11/microsoft.netcore.app.ref.8.0.11.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.11/microsoft.aspnetcore.app.ref.8.0.11.nupkg.sha512"
+  ],
+  "logs": []
+}

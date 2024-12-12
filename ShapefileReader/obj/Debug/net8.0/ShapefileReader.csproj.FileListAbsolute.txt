@@ -1,0 +1,12 @@
+/home/runner/work/Foresite/Foresite/ShapefileReader/bin/Debug/net8.0/ShapefileReader.deps.json
+/home/runner/work/Foresite/Foresite/ShapefileReader/bin/Debug/net8.0/ShapefileReader.dll
+/home/runner/work/Foresite/Foresite/ShapefileReader/bin/Debug/net8.0/ShapefileReader.pdb
+/home/runner/work/Foresite/Foresite/ShapefileReader/obj/Debug/net8.0/ShapefileReader.GeneratedMSBuildEditorConfig.editorconfig
+/home/runner/work/Foresite/Foresite/ShapefileReader/obj/Debug/net8.0/ShapefileReader.AssemblyInfoInputs.cache
+/home/runner/work/Foresite/Foresite/ShapefileReader/obj/Debug/net8.0/ShapefileReader.AssemblyInfo.cs
+/home/runner/work/Foresite/Foresite/ShapefileReader/obj/Debug/net8.0/ShapefileReader.csproj.CoreCompileInputs.cache
+/home/runner/work/Foresite/Foresite/ShapefileReader/obj/Debug/net8.0/ShapefileReader.sourcelink.json
+/home/runner/work/Foresite/Foresite/ShapefileReader/obj/Debug/net8.0/ShapefileReader.dll
+/home/runner/work/Foresite/Foresite/ShapefileReader/obj/Debug/net8.0/refint/ShapefileReader.dll
+/home/runner/work/Foresite/Foresite/ShapefileReader/obj/Debug/net8.0/ShapefileReader.pdb
+/home/runner/work/Foresite/Foresite/ShapefileReader/obj/Debug/net8.0/ref/ShapefileReader.dll

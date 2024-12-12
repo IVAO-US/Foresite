@@ -1,0 +1,59 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "CIFPReader/1.0.0": {
+        "dependencies": {
+          "AWSSDK.S3": "3.7.406.2"
+        },
+        "runtime": {
+          "CIFPReader.dll": {}
+        }
+      },
+      "AWSSDK.Core/3.7.400.53": {
+        "runtime": {
+          "lib/net8.0/AWSSDK.Core.dll": {
+            "assemblyVersion": "3.3.0.0",
+            "fileVersion": "3.7.400.53"
+          }
+        }
+      },
+      "AWSSDK.S3/3.7.406.2": {
+        "dependencies": {
+          "AWSSDK.Core": "3.7.400.53"
+        },
+        "runtime": {
+          "lib/net8.0/AWSSDK.S3.dll": {
+            "assemblyVersion": "3.3.0.0",
+            "fileVersion": "3.7.406.2"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "CIFPReader/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AWSSDK.Core/3.7.400.53": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-OwJTHfD3tXKLPiB/UUr6SSigFycQm6JNTReh5j2kYJP0CgcZmV+qeePEpIptxCVbq28esef/8hdzezkzNhN+fA==",
+      "path": "awssdk.core/3.7.400.53",
+      "hashPath": "awssdk.core.3.7.400.53.nupkg.sha512"
+    },
+    "AWSSDK.S3/3.7.406.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-0qWahm1R46g4VetRXX0JnX8kVvLDouc89EoPDErCRmwZq3gadspwkOiPoRyQCGsRBEdqhwlMJsd148hAMFsR8Q==",
+      "path": "awssdk.s3/3.7.406.2",
+      "hashPath": "awssdk.s3.3.7.406.2.nupkg.sha512"
+    }
+  }
+}

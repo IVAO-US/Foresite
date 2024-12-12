@@ -1,0 +1,175 @@
+@import '_content/Microsoft.AspNetCore.Components.QuickGrid/Microsoft.AspNetCore.Components.QuickGrid.25o87uqmvr.bundle.scp.css';
+
+/* _content/Foresite/Components/Layout/MainLayout.razor.rz.scp.css */
+#blazor-error-ui[b-jr4toepnz6] {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+    #blazor-error-ui .dismiss[b-jr4toepnz6] {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
+/* _content/Foresite/Components/Pages/Home.razor.rz.scp.css */
+.background[b-7w3ze5qbo3], [b-7w3ze5qbo3] canvas, .foreground[b-7w3ze5qbo3] {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: transparent;
+}
+
+.background[b-7w3ze5qbo3] {
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+    .background[b-7w3ze5qbo3]  canvas:first-child {
+        z-index: -1;
+    }
+
+    .background[b-7w3ze5qbo3]  canvas:nth-child(2) {
+        z-index: -2;
+    }
+
+.header[b-7w3ze5qbo3] {
+    box-sizing: border-box;
+    position: absolute;
+    height: 64px;
+    top: 0;
+    right: 0;
+    display: inline-flex;
+    justify-content: flex-end;
+    border-left: 1px dashed white;
+    border-bottom: 1px dashed white;
+    border-bottom-left-radius: 15px;
+    padding: 10px;
+    background-color: #000000;
+    gap: 8px;
+}
+
+    .header > button[b-7w3ze5qbo3] {
+        border: 2px solid white;
+        background-color: black;
+        color: white;
+        font-weight: bold;
+        height: 100%;
+        border-radius: 15px;
+        min-width: 128px;
+        text-transform: uppercase;
+    }
+
+        .header > button:hover[b-7w3ze5qbo3] {
+            border: 2px solid white;
+            background-color: white;
+            color: black;
+            font-weight: bold;
+            height: 100%;
+            border-radius: 15px;
+            min-width: 128px;
+            text-transform: uppercase;
+        }
+
+    .header button.attention[b-7w3ze5qbo3] {
+        background-color: green;
+    }
+
+        .header button.attention:hover[b-7w3ze5qbo3] {
+            color: white;
+        }
+
+.pilot[b-7w3ze5qbo3] {
+    position: absolute;
+}
+
+    .pilot .marker[b-7w3ze5qbo3] {
+        font-size: 30px;
+        color: chartreuse;
+        position: absolute;
+        font-weight: 600;
+    }
+
+    .pilot:hover[b-7w3ze5qbo3] {
+        background-color: red;
+    }
+
+    .pilot > .infoblock[b-7w3ze5qbo3] {
+        padding: 10px;
+        position: absolute;
+        bottom: 10px;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        text-align: center;
+        z-index: 5;
+        font-family: monospace;
+        border: 2px solid white;
+        color: white;
+        background-color: black;
+        display: none;
+    }
+
+        .pilot > .infoblock.infoblock-below[b-7w3ze5qbo3] {
+            top: 15px;
+            bottom: unset;
+        }
+
+    .pilot:hover > .infoblock[b-7w3ze5qbo3] {
+        display: block;
+    }
+
+    .pilot .path[b-7w3ze5qbo3] {
+        pointer-events: none;
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        z-index: -1;
+        display: none;
+    }
+
+    .pilot:hover .path[b-7w3ze5qbo3] {
+        display: block;
+    }
+
+.path svg .pathline[b-7w3ze5qbo3] {
+    color: chartreuse;
+}
+
+.path svg .path-departure[b-7w3ze5qbo3] {
+    fill: chartreuse;
+}
+
+.path svg .path-arrival[b-7w3ze5qbo3] {
+    fill: blue;
+}
+/* _content/Foresite/Components/Pages/Tim/TimTest.razor.rz.scp.css */
+
+.flex-container[b-rbxfmx1phi] {
+    display: flex;
+    flex-direction: row;
+}
+
+ .flex-container > div[b-rbxfmx1phi] {
+        margin: 10px;
+        padding: 20px;
+        font-size: 18px;
+    }
+
+.center[b-rbxfmx1phi] {
+    text-align: center;
+}
