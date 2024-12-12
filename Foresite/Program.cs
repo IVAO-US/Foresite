@@ -74,6 +74,8 @@ try
 
 	app.MapGroup("/auth").MapLoginAndLogout();
 
+	app.MapGet("/api/livetrack/procedures/{airport}", (string airport, CifpService cifp) => cifp.Cifp.Procedures.SelectMany(kvp => kvp.Value).Where(p => p.Airport == airport));
+
 	app.Run();
 }
 catch (Exception ex)
