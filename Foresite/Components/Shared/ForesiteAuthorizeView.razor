@@ -1,16 +1,28 @@
 ﻿@using System.Security.Principal
 @using Microsoft.AspNetCore.Authentication
+@using System.Text.RegularExpressions
+@using System.Web
 @inject IHttpContextAccessor contextAccessor
 
 <AuthorizeView>
 	<Authorized>
-		@if (context.User.Identity is IIdentity ident && SignedIn is not null && _token is not null)
+		@if (context.User.Identity is IIdentity ident3 && _token is not null && !authorized)
 		{
-			@SignedIn(ident.ToUser(_token))
+			@if (NotAllowed is not null)
+			{
+				@NotAllowed(ident3.ToUser(_token))
+			}
 		}
-		else if (context.User.Identity is IIdentity ident2 && ChildContent is not null && _token is not null)
+		else
 		{
-			@ChildContent(ident2.ToUser(_token))
+			@if (context.User.Identity is IIdentity ident && SignedIn is not null && _token is not null)
+			{
+				@SignedIn(ident.ToUser(_token))
+			}
+			else if (context.User.Identity is IIdentity ident2 && ChildContent is not null && _token is not null)
+			{
+				@ChildContent(ident2.ToUser(_token))
+			}
 		}
 	</Authorized>
 	<NotAuthorized>
@@ -31,6 +43,14 @@
 	[Parameter]
 	public RenderFragment? NotSignedIn { get; set; }
 
+	[Parameter]
+	public RenderFragment<ForesiteUser>? NotAllowed { get; set; }
+
+	[Parameter]
+	public StaffRole[] PermittedRoles { get; set; } = [];
+
+	bool authorized = false;
+
 	private string? _token = null;
 
 	public record ForesiteUser(uint Vid, string DisplayName, string[] StaffPositions, ForesiteUser.DivisionStanding Status, string ProfileUrl, string Division, string BearerToken)
@@ -45,7 +65,52 @@
 
 	protected override async Task OnParametersSetAsync()
 	{
-		if (contextAccessor.HttpContext is HttpContext context)
-			_token = await context.GetTokenAsync("access_token");
+
+		if (contextAccessor.HttpContext is not HttpContext context)
+			return;
+
+		_token = await context.GetTokenAsync("access_token");
+
+		// Make sure they're signed in.
+		if (context.User.Identity is not IIdentity ident || !ident.IsAuthenticated)
+			return;
+
+		var user = ident.ToUser(await context.GetTokenAsync());
+
+		// We have no secondments. If they're not US div or not staff, then they're not US staff.
+		if (user.Division != "US" || user.StaffPositions.Length == 0)
+			return;
+
+		// If no permitted roles specified, assume they're just checking the user is staff at all.
+		if (PermittedRoles.Length == 0)
+		{
+			authorized = true;
+			return;
+		}
+
+		// Check each permitted role to make sure the staff member has at least one of them.
+		if (!PermittedRoles.Where(_staffPositionChecks.ContainsKey).Any(r => user.StaffPositions.Any(p => _staffPositionChecks[r].IsMatch(p))))
+			return;
+
+		authorized = true;
+	}
+
+#pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
+	private readonly Dictionary<StaffRole, Regex> _staffPositionChecks = new() {
+		{ StaffRole.DivHq, new(@"US-A?DIR") },
+		{ StaffRole.Membership, new(@"US-MA?C") },
+		{ StaffRole.AtcOps, new(@"US-AOA?C") },
+		{ StaffRole.ArtccStaff, new(@"(KZ..|PHZH|PAZA|PGZU)-A?CH(A\d)?") },
+		{ StaffRole.Training, new(@"US-T(A?C|A\d|0\d)") }
+	};
+#pragma warning restore
+
+	public enum StaffRole
+	{
+		DivHq,
+		Membership,
+		AtcOps,
+		ArtccStaff,
+		Training
 	}
 }
