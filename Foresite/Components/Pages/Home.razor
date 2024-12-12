@@ -78,8 +78,8 @@
 <HeadContent>
 	<style>
 		body {
-		overflow: hidden;
-		background-color: black;
+			overflow: hidden;
+			background-color: black;
 		}
 	</style>
 </HeadContent>
@@ -190,6 +190,7 @@
 
 		await ctx.StrokeAsync();
 		await ctx.EndBatchAsync();
+		await InvokeAsync(StateHasChanged);
 	}
 
 	(double x, double y) _lastMousePosition = (0, 0);
