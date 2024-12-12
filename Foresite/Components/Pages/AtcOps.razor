@@ -7,7 +7,7 @@
 @inject IHttpContextAccessor contextAccessor
 @inject IvaoApiService ivao
 
-<ForesiteAuthorizeView PermittedRoles="[StaffRole.AtcOps]">
+<ForesiteAuthorizeView PermittedRoles="[StaffRole.AtcOps]" Context="_">
 	<QuickGrid Items="ivao.GetFras().OrderByDescending(f => f.Level).AsQueryable()">
 		<PropertyColumn Title="Position" Property="g => g.Position" Sortable="true" />
 		<TemplateColumn Title="Principal">
